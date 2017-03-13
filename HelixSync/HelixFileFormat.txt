@@ -1,0 +1,99 @@
+﻿Overview
+========
+The Helix File format is intended to be a robust authenticated encryption 
+format that primarily uses the .net libraries. Although initialiy being used for file formats it is modular in nature with the intend to be capibile 
+of reuse in new applications. Like all good crypto it is based on well tested algorithms and established mechinisms to combine the critical aspects 
+of crypto.
+
+
+Nested Streams
+==============
+This has been implemented through nested streams in the following order for encryption (reveresed for decryption). The use of nested streams allows any of the components to be reused independently.
+
+File Header + Content
+    => Multi Block Encryptor (Intermediate Format) 
+	   => GZip (Compression) 
+	       => AES (Encryption) 
+		       => HMAC (Athentication) (https://en.wikipedia.org/wiki/Hash-based_message_authentication_code)
+
+Encryption Structure
+====================
+       8  File Designator / Version        ---+ Header
+      32  Password Salt                       |
+      16  HMAC Salt                           |
+      16  Initialization Vector (IV)       ---+
+      32  Header's HMAC  <-- HMAC(Header)
+
+      32  Block 0's HMAC <-- HMAC(Header | 0 | 0 | Block 1 Encr)
+  32,768  Block 0 Encr   <-- AES
+      32  Block 1 HMAC <-- HMAC(Header | 1 | 0 | Block 1 Encr)
+  32,768  Block 1 Encr <-- AES
+      32  Block 2 HMAC <-- HMAC(Header | 2 | 0 | Block 2 Encr)
+  32,768  Block 2 Encr <-- AES
+      32  Block n HMAC <-- HMAC(Header | n | 1 | Block n Encr)
+< 32,768  Block n Encr <-- AES
+
++------------------------------------------------------------------
+|  HMAC (Athentication)
+|  +---------------------------------------------------------------
+|  |  AES (Encryption)
+|  |  +------------------------------------------------------------
+|  |  |  GZip (Compression)
+|  |  |  +---------------------------------------------------------
+|  |  |  |  MuliBlock Encryptor (Intermediate Format) <= Block Len (8) + Block Content (..) + Block Len(8) + Block Content(..)
+|  |  |  |  +----------------------+-------------------------+
+|  |  |  |  | File Metadata (JSON) | File Content            |
+|  |  |  |  +----------------------+-------------------------+
+
+
+== Derived Key ==
+==========================
+The password is strengthened by using the PBKDF2/Rfc2898DeriveBytes function. A unique salt is generated for each directory. This salt is stored along with each file to preserve the ability to read it even if other files have been removed.
+ (https://en.wikipedia.org/wiki/PBKDF2)
+
+PasswordDerivedBytes <-- Rfc2898DeriveBytes(password, password salt, 10000)
+
+== HMAC ==
+==========
+The encryption structure includes use of HMAC SHA256 of the header and a HMAC SHA256 for each 32k 
+block of data. The HMAC key uses a concatination of the derived key (see section above) and the 
+HMAC salt. The HMAC salt is randomly generated when the file is saved and is stored within the 
+header.
+
+The header's HMAC is computed from header fields (all of the bytes proceeding it). If the header 
+is not verified the decryption will terminate.
+
+The data stream is broken down into 32K blocks. Each block has an individual HMAC computed using 
+a prefix followed by the actual data. The prefix includes the header's HMAC, sequential block 
+number starting from block zero and a final block flag (stored as a 1 full byte with 0 or 1). The 
+prefix is not stored on disk. If a block fails to validate no decryption for the block will be 
+performed and further decryption will terminate.
+
+
+
+
+
+Blocks have individual HMAC to ensure performance and to provide 
+quick feedback in the case of a curruption. The Authentication is performed after the encryption also known as Encrypt-than-MAC (https://en.wikipedia.org/wiki/Authenticated_encryption) 
+
+The HMAC includes the header, block number, if it is a final block along with the encrypted data to ensure that blocks cannot be switched or otherwise modified.
+
+HMAC/Authentication
+==============
+ 8  File Designator   --+
+32  Password Salt       | Header
+16  HMAC Salt           |
+16  IV                --+
+32  Header HMAC  <-- HMAC(Header)
+..  Encrypted Content
+
+
+Block HMAC/Authentication
+========================
+32  Header HMAC             --+
+ 4  Block Number (0,1,2,n)    | Prefix (not stored on disk)
+ 1  Final Block (1/0)       --+
+..  Encrypted Content
+
+
+PasswordDerivedBytes <-- Rfc2898DeriveBytes(password, password salt, 10000)
