@@ -11,10 +11,10 @@ namespace HelixSync
         Unknown,
 
         Unchanged, //No change
-        Match, //One or more sides changed however they now match
-        Conflict, //Change from both sides
+        Match, //One or more sides changed however they now match  
+        EncryptedSide, //ENC=>DEC
+        DecryptedSide, //DEC=>ENC
 
-        EncryptedSide,
-        DecryptedSide,
+        Conflict, //Change from both sides
     }
 }

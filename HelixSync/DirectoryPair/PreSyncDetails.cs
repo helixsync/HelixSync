@@ -8,6 +8,11 @@ namespace HelixSync
 {
     public class PreSyncDetails
     {
+        public PreSyncDetails()
+        {
+
+        }
+
         public FileEntry DecrInfo { get; set; }
         public FileEntry EncrInfo { get; set; }
         public FileEntry EncrHeader { get; set; }
@@ -15,141 +20,51 @@ namespace HelixSync
         public PairSide Side { get; set; }
         public string ShouldBeEncrName { get; set; }
 
-        internal bool DecrChanged
-        {
-            get
-            {
-                bool decrChanged = true;
-                if (LogEntry == null && DecrInfo == null)
-                {
-                    decrChanged = false;
-                }
-                else if (LogEntry == null && DecrInfo.EntryType == FileEntryType.Removed)
-                {
-                    decrChanged = false;
-                }
-                else if (LogEntry == null && DecrInfo.EntryType != FileEntryType.Removed)
-                {
-                    decrChanged = true;
-                }
-                else if (LogEntry.DecrFileName == DecrInfo.FileName
-                    && LogEntry.DecrModified == DecrInfo.LastWriteTimeUtc
-                    && LogEntry.EntryType == DecrInfo.EntryType)
-                {
-                    decrChanged = false;
-                }
-                return decrChanged;
-            }
-        }
-        internal bool EncrChanged
-        {
-            get
-            {
-                bool encrChanged = true;
-
-                if (LogEntry == null && EncrInfo == null)
-                {
-                    encrChanged = false;
-                }
-                else if (LogEntry == null && EncrInfo.EntryType == FileEntryType.Removed)
-                {
-                    encrChanged = false;
-                }
-                else if (LogEntry == null && EncrInfo.EntryType != FileEntryType.Removed)
-                {
-                    encrChanged = true;
-                }
-                else if (LogEntry.EncrFileName == EncrInfo.FileName
-                    && LogEntry.EncrModified == EncrInfo.LastWriteTimeUtc)
-                {
-                    encrChanged = false;
-                }
-                return encrChanged;
-            }
-        }
-
-
-
-
-        public string Mode2
-        {
-            get
-            {
-                bool decrChanged = DecrChanged;
-                bool encrChanged = EncrChanged;
-
-
-                if (encrChanged == false && decrChanged == false)
-                {
-                    return "<UNCHG>"; //Unchanged
-                }
-                else if (encrChanged == true && decrChanged == true)
-                {
-                    if (DecrInfo.EntryType == FileEntryType.Removed && EncrHeader == null)
-                    {
-                        return "<MATCH>";
-                    }
-                    else if (DecrInfo.LastWriteTimeUtc == EncrHeader.LastWriteTimeUtc
-                        && DecrInfo.EntryType == EncrHeader.EntryType)
-                    {
-                        return "<MATCH>"; //Both changed however still match
-                    }
-
-                    return "<CNFLC>"; //Both changed however one is in conflict
-                }
-                else if (encrChanged)
-                {
-                    return "<ENCRP>";
-                }
-                else if (decrChanged)
-                {
-                    return "<DECRP>";
-                }
-                else
-                {
-                    return "<UNKNO>";
-                }
-            }
-        }
+        
+        public PreSyncMode SyncMode { get; set; }
+        public FileEntryType DisplayEntryType { get; set; }
+        public long DisplayFileLength { get; set; }
+        public PreSyncOperation DisplayOperation { get; set; }
 
         public override string ToString()
         {
-            //"Key: [+] Add  [-] Remove  [c] Change  [x] Drop Delete Stub"
-            //112KB + ENC=>DEC 1D3FE0... => Folder\File Name.txt
-
             StringBuilder builder = new StringBuilder();
-            builder.Append(Mode2);
-            if (Side == PairSide.Decrypted)
-            {
-                if (DecrInfo.EntryType == FileEntryType.Directory)
-                    builder.Append("<DIR> ");
-                else if (EncrHeader?.EntryType == FileEntryType.Removed)
-                    builder.Append("*DEL* ");
-                else
-                    builder.Append(FormatBytes5(DecrInfo.Length) + " ");
-                //builder.Append(Mode + " ");
+
+            if (DisplayEntryType == FileEntryType.Directory)
+                builder.Append("<DIR> ");
+            else
+                builder.Append(FormatBytes5(DisplayFileLength) + " "); //ex 1.5KB
+
+
+
+            if (DisplayOperation == PreSyncOperation.Add)
+                builder.Append("+ ");
+            else if (DisplayOperation == PreSyncOperation.Remove)
+                builder.Append("- ");
+            else if (DisplayOperation == PreSyncOperation.Change)
+                builder.Append("c ");
+            else if (DisplayOperation == PreSyncOperation.Error)
+                builder.Append("! ");
+            else
+                builder.Append("  ");
+
+            if (SyncMode == PreSyncMode.Match || SyncMode == PreSyncMode.Unchanged)
+                builder.Append("         ");
+            else if (SyncMode == PreSyncMode.DecryptedSide)
                 builder.Append("DEC=>ENC ");
-                builder.Append(ShouldBeEncrName.Substring(0, 6) + "... ");
-                builder.Append(DecrInfo.FileName);
-
-                return builder.ToString();
-            }
-            else //if (Side == PairSide.Encrypted)
-            {
-                if (EncrHeader.EntryType == FileEntryType.Directory)
-                    builder.Append("<DIR> ");
-                else if (EncrHeader.EntryType == FileEntryType.Removed)
-                    builder.Append("*DEL* ");
-                else
-                    builder.Append(FormatBytes5(EncrHeader.Length) + " ");
-                //builder.Append(Mode + " ");
+            else if (SyncMode == PreSyncMode.EncryptedSide)
                 builder.Append("ENC=>DEC ");
-                builder.Append(ShouldBeEncrName.Substring(0, 6) + "... ");
-                builder.Append(EncrHeader.FileName);
+            else //(SyncMode == PreSyncMode.Unknown)
+                builder.Append("UNKNOWN  ");
 
-                return builder.ToString();
-            }
+            builder.Append((EncrInfo?.FileName ?? ShouldBeEncrName ?? "------").Substring(0, 6) + "... ");
+
+            builder.Append(DecrInfo?.FileName ?? EncrHeader?.FileName ?? "");
+            return builder.ToString();
         }
+
+
+        
 
         /// <summary>
         /// Formats a size to ensure that it can fit in 5 characters.

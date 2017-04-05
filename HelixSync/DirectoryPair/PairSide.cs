@@ -11,6 +11,7 @@ namespace HelixSync
 {
     public enum PairSide
     {
+        None,
         Decrypted,
         Encrypted
     }

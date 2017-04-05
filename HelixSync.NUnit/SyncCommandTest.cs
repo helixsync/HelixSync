@@ -119,17 +119,20 @@ namespace HelixSync.NUnit
         [Test]
         public void SyncCommand_ChangeCaseOnly()
         {
-            Decr1.UpdateTo("A");
-            SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
-            SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
-            Decr1.AssertEqual(new string[] { "A" });
-            Decr2.AssertEqual(new string[] { "A" });
+            for (int i = 0; i < 10; i++)
+            {
+                Decr1.UpdateTo("A < xyz");
+                SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
+                SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
+                Decr1.AssertEqual(new string[] { "A < xyz" });
+                Decr2.AssertEqual(new string[] { "A < xyz" });
 
-            Decr1.UpdateTo("a");
-            SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
-            SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
-            Decr1.AssertEqual(new string[] { "a" });
-            Decr2.AssertEqual(new string[] { "a" });
+                Decr1.UpdateTo("a");
+                SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
+                SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
+                Decr1.AssertEqual(new string[] { "a" });
+                Decr2.AssertEqual(new string[] { "a" });
+            }
 
             Assert.Fail("Sometimes works sometimes fails depending if th delete comes before the add");
         }

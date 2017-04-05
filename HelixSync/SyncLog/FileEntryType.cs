@@ -11,9 +11,9 @@ namespace HelixSync
 {
     public enum FileEntryType
     {
+        Removed,
         File,
         Directory,
-        Removed,
         Purged,
     }
 }

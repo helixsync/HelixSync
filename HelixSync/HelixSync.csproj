@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DirectoryPair\PreSyncMode.cs" />
+    <Compile Include="DirectoryPair\PreSyncOperation.cs" />
     <Compile Include="HelixFile\AuthenticatedEncryption\AuthenticatedEncryptionException.cs" />
     <Compile Include="HelixFile\AuthenticatedEncryption\CryptoStream2.cs" />
     <Compile Include="ConsoleEx.cs" />

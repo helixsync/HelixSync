@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -71,7 +72,7 @@ namespace HelixSync
         /// <summary>
         /// Matches files from Encr, Decr and Log Entry
         /// </summary>
-        public List<PreSyncDetails> MatchFiles()
+        private List<PreSyncDetails> MatchFiles()
         {
             if (!WhatIf && (!EncrDirectory.IsOpen || !DecrDirectory.IsOpen))
                 throw new InvalidOperationException("DecrDirectory and EncrDirectory needs to be opened before performing operation");
@@ -81,6 +82,7 @@ namespace HelixSync
             IEnumerable<SyncLogEntry> syncLog = !DecrDirectory.IsOpen ? (IEnumerable<SyncLogEntry>)new List<SyncLogEntry>() : DecrDirectory.SyncLog;
             List<PreSyncDetails> preSyncDetails = new List<PreSyncDetails>();
             
+            //Adds Logs
             preSyncDetails.AddRange(syncLog.Select(entry => new PreSyncDetails { LogEntry = entry }));
             
             //Updates/Adds Decrypted File Information
@@ -92,30 +94,45 @@ namespace HelixSync
             foreach (var entry in decrJoin.ToList())
             {
                 if (entry.Item2 == null)
+                {
+                    //New Entry (not in log)
                     preSyncDetails.Add(new HelixSync.PreSyncDetails { DecrInfo = entry.Item1 });
+                }
                 else
+                {
+                    //Existing Entry (update only)
                     entry.Item2.DecrInfo = entry.Item1;
+                }
             }
 
             //find encrypted file names
-            foreach(var entry in preSyncDetails.Where(d => d.DecrInfo != null))
-                entry.ShouldBeEncrName = EncrDirectory.FileNameEncoder.EncodeName(entry.DecrInfo.FileName);
+            foreach(var entry in preSyncDetails)
+                entry.ShouldBeEncrName = EncrDirectory.FileNameEncoder.EncodeName(entry.LogEntry?.DecrFileName ?? entry.DecrInfo.FileName);
+
 
             //Updates/adds encrypted File Information
             var encrJoin = encrDirectoryFiles
                 .GroupJoin(preSyncDetails, 
                     o => o.FileName, 
-                    i => i?.LogEntry?.EncrFileName ?? i.ShouldBeEncrName, 
+                    i => i.ShouldBeEncrName, 
                     (o, i) => new Tuple<FileEntry, PreSyncDetails>(o, i.FirstOrDefault()));
             foreach (var entry in encrJoin.ToList())
             {
                 if (entry.Item2 == null)
+                {
+                    //New Entry (not in log or decrypted file)
                     preSyncDetails.Add(new HelixSync.PreSyncDetails { EncrInfo = entry.Item1 });
+                }
                 else
+                {
+                    //Existing Entry
                     entry.Item2.EncrInfo = entry.Item1;
+                }
             }
 
-            
+            foreach (var entry in preSyncDetails)
+                RefreshPreSyncMode(entry);
+
             return preSyncDetails;
         }
 
@@ -124,7 +141,7 @@ namespace HelixSync
             var rng = RandomNumberGenerator.Create();
 
             List<PreSyncDetails> matches = MatchFiles()
-                .Where(m => m.DecrChanged || m.EncrChanged)
+                .Where(m => m.SyncMode != PreSyncMode.Unchanged)
                 .OrderBy(m =>
                 {
                     byte[] rno = new byte[5];
@@ -133,54 +150,155 @@ namespace HelixSync
                     return randomvalue;
                 })
                 .ToList();
-            //var str = matches[0].ToString();
-            foreach(var match in matches.Where(m=> m.EncrInfo != null))
+
+            //Fills in the EncrHeader
+            foreach (PreSyncDetails match in matches.Where(m => m.EncrInfo != null))
             {
                 string encryFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(match.EncrInfo.FileName));
                 match.EncrHeader = HelixFile.DecryptHeader(encryFullPath, EncrDirectory.DerivedBytesProvider);
+                RefreshPreSyncMode(match);
             }
+
+            //todo: sort dependencies
 
             return matches;
         }
 
-        internal PreSyncMode CalculateMode(PreSyncDetails preSyncDetails)
+        internal void RefreshPreSyncMode(PreSyncDetails preSyncDetails)
         {
+            var LogEntry = preSyncDetails.LogEntry;
+            var DecrInfo = preSyncDetails.DecrInfo;
+            var EncrInfo = preSyncDetails.EncrInfo;
+            var decrType = preSyncDetails.DecrInfo?.EntryType ?? FileEntryType.Removed;
+            var encrType = preSyncDetails.EncrInfo?.EntryType ?? FileEntryType.Removed;
 
-            bool decrChanged = preSyncDetails.DecrChanged;
-            bool encrChanged = preSyncDetails.EncrChanged;
+            bool decrChanged = true;
+            if (LogEntry == null && DecrInfo == null)
+            {
+                decrChanged = false;
+            }
+            else if (LogEntry == null && decrType == FileEntryType.Removed)
+            {
+                decrChanged = false;
+            }
+            else if (LogEntry == null && decrType != FileEntryType.Removed)
+            {
+                decrChanged = true;
+            }
+            else if (LogEntry.EntryType == FileEntryType.Removed && decrType == FileEntryType.Removed)
+            {
+                decrChanged = false;
+            }
+            else if (LogEntry.EntryType == decrType
+                && LogEntry.DecrFileName == DecrInfo.FileName
+                && LogEntry.DecrModified == DecrInfo.LastWriteTimeUtc)
+            {
+                decrChanged = false;
+            }
 
-            if (encrChanged == false && decrChanged == false)
-                return PreSyncMode.Unchanged;
+
+            bool encrChanged = true;
+            if (LogEntry == null && EncrInfo == null)
+            {
+                encrChanged = false;
+            }
+            else if (LogEntry == null && encrType == FileEntryType.Removed)
+            {
+                encrChanged = false;
+            }
+            else if (LogEntry == null && encrType != FileEntryType.Removed)
+            {
+                encrChanged = true;
+            }
+            else if (LogEntry.EncrFileName == EncrInfo.FileName
+                && LogEntry.EncrModified == EncrInfo.LastWriteTimeUtc)
+            {
+                encrChanged = false;
+            }
 
             //todo: detect orphans
             //todo: detect case-only conflicts
 
-            if (encrChanged == true && decrChanged == true)
+            if (encrChanged == false && decrChanged == false)
+            {
+                
+                preSyncDetails.SyncMode = PreSyncMode.Unchanged;
+            }
+            else if (encrChanged == true && decrChanged == true)
             {
                 if (preSyncDetails.DecrInfo.EntryType == FileEntryType.Removed && preSyncDetails.EncrHeader == null)
                 {
-                    return PreSyncMode.Match;
+                    preSyncDetails.SyncMode = PreSyncMode.Match;
                 }
                 else if (preSyncDetails.DecrInfo.LastWriteTimeUtc == preSyncDetails.EncrHeader.LastWriteTimeUtc
                     && preSyncDetails.DecrInfo.EntryType == preSyncDetails.EncrHeader.EntryType)
                 {
-                    return PreSyncMode.Match; //Both changed however still match
+                    preSyncDetails.SyncMode = PreSyncMode.Match; //Both changed however still match
                 }
-
-                return PreSyncMode.Conflict; //Both changed however one is in conflict
+                else
+                {
+                    preSyncDetails.SyncMode = PreSyncMode.Conflict; //Both changed however one is in conflict
+                }
             }
             else if (encrChanged)
             {
-                return PreSyncMode.EncryptedSide;
+                preSyncDetails.SyncMode = PreSyncMode.EncryptedSide;
+
             }
             else if (decrChanged)
             {
-                return PreSyncMode.DecryptedSide;
+                preSyncDetails.SyncMode = PreSyncMode.DecryptedSide;
             }
             else
             {
-                return PreSyncMode.Unknown;
+                preSyncDetails.SyncMode = PreSyncMode.Unknown;
             }
+
+
+
+            if (preSyncDetails.SyncMode == PreSyncMode.DecryptedSide)
+            {
+                preSyncDetails.DisplayEntryType = preSyncDetails?.DecrInfo?.EntryType ?? FileEntryType.Removed;
+                preSyncDetails.DisplayFileLength = preSyncDetails.DecrInfo?.Length ?? preSyncDetails.EncrHeader?.Length ?? 0;
+
+                if (preSyncDetails.DecrInfo == null || preSyncDetails.DecrInfo.EntryType == FileEntryType.Removed)
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Remove;
+                else if (preSyncDetails.EncrInfo == null || preSyncDetails.EncrInfo.EntryType == FileEntryType.Removed)
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Add;
+                else if(preSyncDetails.EncrHeader?.EntryType == FileEntryType.Removed)
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Add;
+                else
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Change;
+            }
+            else if (preSyncDetails.SyncMode == PreSyncMode.EncryptedSide)
+            {
+                preSyncDetails.DisplayEntryType = preSyncDetails.EncrHeader?.EntryType ?? FileEntryType.Removed;
+                preSyncDetails.DisplayFileLength = preSyncDetails.EncrHeader?.Length ?? preSyncDetails.DecrInfo?.Length ?? 0;
+                
+                if (preSyncDetails.EncrInfo == null || preSyncDetails.EncrInfo.EntryType == FileEntryType.Removed) 
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Remove;
+                else if(preSyncDetails.EncrHeader?.EntryType == FileEntryType.Removed)
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Remove;
+                else if (preSyncDetails.DecrInfo == null || preSyncDetails.DecrInfo.EntryType == FileEntryType.Removed)
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Add;
+                else
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Change;
+            }
+            else if (preSyncDetails.SyncMode == PreSyncMode.Match || preSyncDetails.SyncMode == PreSyncMode.Unchanged)
+            {
+                preSyncDetails.DisplayEntryType = preSyncDetails.DecrInfo.EntryType;
+                preSyncDetails.DisplayFileLength = preSyncDetails.DecrInfo?.Length ?? preSyncDetails.EncrHeader?.Length ?? 0;
+
+                preSyncDetails.DisplayOperation = PreSyncOperation.None;
+            }
+            else
+            {
+                preSyncDetails.DisplayEntryType = preSyncDetails.DecrInfo.EntryType;
+                preSyncDetails.DisplayFileLength = preSyncDetails.DecrInfo?.Length ?? preSyncDetails.EncrHeader?.Length ?? 0;
+
+                preSyncDetails.DisplayOperation = PreSyncOperation.Error;
+            }
+
         }
 
 
