@@ -140,16 +140,16 @@ namespace HelixSync
                     consoleEx.WriteLine("Key: [+] Add  [-] Remove  [c] Change  [x] Drop Delete Stub");
                     consoleEx.WriteLine("");
 
-                    List<PreSyncDetails> changes2 = pair.FindChanges2();
+                    List<PreSyncDetails> changes = pair.FindChanges2();
 
-                    List<DirectoryChange> changes = pair.FindChanges();
+                    //List<DirectoryChange> changes = pair.FindChanges();
                     if (changes.Count == 0)
                         consoleEx.WriteLine("--No Changes--");
 
-                    foreach (DirectoryChange change in changes)
+                    foreach (PreSyncDetails change in changes)
                     {
-                        PreSyncDetails preSyncDetails = pair.GetPreSyncDetails(change);
-                        consoleEx.WriteLine(preSyncDetails);
+                        pair.RefreshPreSyncDetails(change);
+                        consoleEx.WriteLine(change);
                         string message;
                         bool retry;
                         if (!options.WhatIf)

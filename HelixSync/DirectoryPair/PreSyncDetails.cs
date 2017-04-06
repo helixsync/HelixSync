@@ -17,9 +17,12 @@ namespace HelixSync
         public FileEntry EncrInfo { get; set; }
         public FileEntry EncrHeader { get; set; }
         public SyncLogEntry LogEntry { get; set; }
-        public PairSide Side { get; set; }
-        public string ShouldBeEncrName { get; set; }
 
+        [Obsolete]
+        public PairSide Side { get; set; }
+
+        public string EncrFileName { get; set; }
+        public string DecrFileName { get; set; }
         
         public PreSyncMode SyncMode { get; set; }
         public FileEntryType DisplayEntryType { get; set; }
@@ -34,9 +37,7 @@ namespace HelixSync
                 builder.Append("<DIR> ");
             else
                 builder.Append(FormatBytes5(DisplayFileLength) + " "); //ex 1.5KB
-
-
-
+            
             if (DisplayOperation == PreSyncOperation.Add)
                 builder.Append("+ ");
             else if (DisplayOperation == PreSyncOperation.Remove)
@@ -57,9 +58,9 @@ namespace HelixSync
             else //(SyncMode == PreSyncMode.Unknown)
                 builder.Append("UNKNOWN  ");
 
-            builder.Append((EncrInfo?.FileName ?? ShouldBeEncrName ?? "------").Substring(0, 6) + "... ");
+            builder.Append((EncrFileName ?? "------").Substring(0, 6) + "... ");
 
-            builder.Append(DecrInfo?.FileName ?? EncrHeader?.FileName ?? "");
+            builder.Append(DecrFileName ?? "");
             return builder.ToString();
         }
 

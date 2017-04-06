@@ -79,6 +79,8 @@ namespace HelixSync
 
             List<FileEntry> encrDirectoryFiles = !EncrDirectory.IsOpen ? new List<FileEntry>() : EncrDirectory.GetAllEntries().ToList();
             List<FileEntry> decrDirectoryFiles = DecrDirectory.GetAllEntries().ToList();
+
+            //todo: filter out log entries where the decr file name and the encr file name does not match
             IEnumerable<SyncLogEntry> syncLog = !DecrDirectory.IsOpen ? (IEnumerable<SyncLogEntry>)new List<SyncLogEntry>() : DecrDirectory.SyncLog;
             List<PreSyncDetails> preSyncDetails = new List<PreSyncDetails>();
             
@@ -106,15 +108,18 @@ namespace HelixSync
             }
 
             //find encrypted file names
-            foreach(var entry in preSyncDetails)
-                entry.ShouldBeEncrName = EncrDirectory.FileNameEncoder.EncodeName(entry.LogEntry?.DecrFileName ?? entry.DecrInfo.FileName);
+            foreach (var entry in preSyncDetails)
+            {
+                entry.DecrFileName = entry.LogEntry?.DecrFileName ?? entry.DecrInfo.FileName;
+                entry.EncrFileName = EncrDirectory.FileNameEncoder.EncodeName(entry.DecrFileName);
+            }
 
 
             //Updates/adds encrypted File Information
             var encrJoin = encrDirectoryFiles
                 .GroupJoin(preSyncDetails, 
                     o => o.FileName, 
-                    i => i.ShouldBeEncrName, 
+                    i => i.EncrFileName, 
                     (o, i) => new Tuple<FileEntry, PreSyncDetails>(o, i.FirstOrDefault()));
             foreach (var entry in encrJoin.ToList())
             {
@@ -130,7 +135,7 @@ namespace HelixSync
                 }
             }
 
-            foreach (var entry in preSyncDetails)
+            foreach (PreSyncDetails entry in preSyncDetails)
                 RefreshPreSyncMode(entry);
 
             return preSyncDetails;
@@ -142,7 +147,18 @@ namespace HelixSync
 
             List<PreSyncDetails> matches = MatchFiles()
                 .Where(m => m.SyncMode != PreSyncMode.Unchanged)
-                .OrderBy(m =>
+                .ToList();
+
+            //Fills in the EncrHeader
+            foreach (PreSyncDetails match in matches.Where(m => m.EncrInfo != null))
+            {
+                RefreshPreSyncEncrHeader(match);
+                RefreshPreSyncMode(match);
+            }
+
+            //todo: sort dependencies
+
+            return matches.OrderBy(m =>
                 {
                     byte[] rno = new byte[5];
                     rng.GetBytes(rno);
@@ -150,22 +166,28 @@ namespace HelixSync
                     return randomvalue;
                 })
                 .ToList();
-
-            //Fills in the EncrHeader
-            foreach (PreSyncDetails match in matches.Where(m => m.EncrInfo != null))
-            {
-                string encryFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(match.EncrInfo.FileName));
-                match.EncrHeader = HelixFile.DecryptHeader(encryFullPath, EncrDirectory.DerivedBytesProvider);
-                RefreshPreSyncMode(match);
-            }
-
-            //todo: sort dependencies
-
-            return matches;
         }
 
-        internal void RefreshPreSyncMode(PreSyncDetails preSyncDetails)
+        private void RefreshPreSyncEncrHeader(PreSyncDetails match)
         {
+            string encryFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(match.EncrInfo.FileName));
+            if (File.Exists(encryFullPath))
+            {
+                match.EncrHeader = HelixFile.DecryptHeader(encryFullPath, EncrDirectory.DerivedBytesProvider);
+
+                //Updates the DecrFileName (if neccessary)
+                if (string.IsNullOrEmpty(match.DecrFileName)
+                    && EncrDirectory.FileNameEncoder.EncodeName(match.EncrHeader.FileName) == match.EncrInfo.FileName)
+                {
+                    match.DecrFileName = match.EncrHeader.FileName;
+                }
+            }
+        }
+        private void RefreshPreSyncMode(PreSyncDetails preSyncDetails)
+        {
+            if (preSyncDetails == null)
+                throw new ArgumentNullException(nameof(preSyncDetails));
+
             var LogEntry = preSyncDetails.LogEntry;
             var DecrInfo = preSyncDetails.DecrInfo;
             var EncrInfo = preSyncDetails.EncrInfo;
@@ -286,7 +308,7 @@ namespace HelixSync
             }
             else if (preSyncDetails.SyncMode == PreSyncMode.Match || preSyncDetails.SyncMode == PreSyncMode.Unchanged)
             {
-                preSyncDetails.DisplayEntryType = preSyncDetails.DecrInfo.EntryType;
+                preSyncDetails.DisplayEntryType = preSyncDetails.DecrInfo?.EntryType ?? FileEntryType.Removed;
                 preSyncDetails.DisplayFileLength = preSyncDetails.DecrInfo?.Length ?? preSyncDetails.EncrHeader?.Length ?? 0;
 
                 preSyncDetails.DisplayOperation = PreSyncOperation.None;
@@ -300,6 +322,37 @@ namespace HelixSync
             }
 
         }
+        
+        
+        /// <summary>
+        /// Refreshes the contents of the preSyncDetails using the file system (in case the file system has changed since last retrieved)
+        /// </summary>
+        internal void RefreshPreSyncDetails(PreSyncDetails preSyncDetails)
+        {
+            if (preSyncDetails == null)
+                throw new ArgumentNullException(nameof(preSyncDetails));
+            if (string.IsNullOrEmpty(preSyncDetails.EncrFileName) && string.IsNullOrEmpty(preSyncDetails.DecrFileName))
+                throw new ArgumentException("EncrFileName or DecrFileName must be included with preSyncDetails", nameof(preSyncDetails));
+
+            if (string.IsNullOrEmpty(preSyncDetails.EncrFileName))
+                preSyncDetails.EncrFileName = EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.DecrFileName);
+            
+            preSyncDetails.EncrInfo = FileEntry.FromFile(Path.Combine(EncrDirectory.DirectoryPath, preSyncDetails.EncrFileName),
+                                                        EncrDirectory.DirectoryPath);
+            RefreshPreSyncEncrHeader(preSyncDetails);
+
+            if (!string.IsNullOrEmpty(preSyncDetails.DecrFileName))
+            {
+                preSyncDetails.DecrInfo = FileEntry.FromFile(Path.Combine(DecrDirectory.DirectoryPath, preSyncDetails.DecrFileName),
+                                                     DecrDirectory.DirectoryPath);
+            }
+
+            preSyncDetails.LogEntry = DecrDirectory.SyncLog.FindByDecrFileName(preSyncDetails.DecrFileName);
+
+            RefreshPreSyncMode(preSyncDetails);
+        }
+
+
 
 
         [Obsolete]
@@ -359,50 +412,6 @@ namespace HelixSync
             return entry;
         }
 
-
-
-        public PreSyncDetails GetPreSyncDetails(DirectoryChange entry)
-        {
-            if (entry == null)
-                throw new ArgumentNullException(nameof(entry));
-
-            PreSyncDetails details = new PreSyncDetails();
-            var SyncLog = DecrDirectory.SyncLog;
-            if (entry.Side == PairSide.Decrypted)
-            {
-                details.Side = PairSide.Decrypted;
-                details.LogEntry = DecrDirectory.SyncLog.FindByDecrFileName(entry.FileName);
-                details.DecrInfo = FileEntry.FromFile(Path.Combine(DecrDirectory.DirectoryPath, entry.FileName), DecrDirectory.DirectoryPath);
-
-                string encrName;
-                if (WhatIf && EncrDirectory.FileNameEncoder == null)
-                    encrName = new string('#', 32);
-                else
-                    encrName = EncrDirectory.FileNameEncoder.EncodeName(entry.FileName);
-                details.ShouldBeEncrName = encrName;
-                details.EncrInfo = FileEntry.FromFile(Path.Combine(EncrDirectory.DirectoryPath, encrName), EncrDirectory.DirectoryPath);
-                if (details.EncrInfo.EntryType != FileEntryType.Removed)
-                {
-                    details.EncrHeader = HelixFile.DecryptHeader(Path.Combine(EncrDirectory.DirectoryPath, encrName),
-                                                                 EncrDirectory.DerivedBytesProvider);
-                }
-                return details;
-            }
-            else //if (entry.Side == PairSide.Encrypted)
-            {
-                details.Side = PairSide.Encrypted;
-                details.LogEntry = DecrDirectory.SyncLog.FindByEncrFileName(entry.FileName);
-                details.EncrHeader = HelixFile.DecryptHeader(Path.Combine(EncrDirectory.DirectoryPath, entry.FileName),
-                                                             EncrDirectory.DerivedBytesProvider);
-                details.EncrInfo = FileEntry.FromFile(Path.Combine(EncrDirectory.DirectoryPath, entry.FileName), 
-                                                         EncrDirectory.DirectoryPath);
-                details.DecrInfo = FileEntry.FromFile(Path.Combine(DecrDirectory.DirectoryPath, details.EncrHeader.FileName),
-                                                         DecrDirectory.DirectoryPath);
-                details.ShouldBeEncrName = EncrDirectory.FileNameEncoder.EncodeName(details.DecrInfo.FileName);
-
-                return details;
-            }
-        }
 
         public SyncStatus TrySync(DirectoryChange entry)
         {
@@ -469,6 +478,67 @@ namespace HelixSync
                 return SyncStatus.Success;
             }
         }
+
+
+        public SyncStatus TrySync(PreSyncDetails entry, out bool retry, out string message)
+        {
+            if (WhatIf)
+                throw new NotSupportedException("Unable to perform sync when WhatIf mode is set to true");
+            if (entry == null)
+                throw new ArgumentNullException(nameof(entry));
+
+            message = null;
+            retry = false;
+
+            var SyncLog = DecrDirectory.SyncLog;
+            if (entry.SyncMode == PreSyncMode.DecryptedSide)
+            {
+                SyncLogEntry logEntry = entry.LogEntry;
+                SyncLogEntry fileSystemEntry = CreateNewLogEntryFromDecrPath(entry.DecrFileName);
+                if (logEntry?.ToString() == fileSystemEntry?.ToString())
+                    return SyncStatus.Skipped; //Unchanged
+
+                
+                string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(entry.EncrFileName));
+                string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(entry.DecrFileName));
+                FileEncryptOptions options = new FileEncryptOptions();
+                FileEntry header = null;
+                options.BeforeWriteHeader = (h) => header = h;
+                options.StoredFileName = entry.DecrFileName;
+                options.FileVersion = EncrDirectory.Header.FileVersion;
+                HelixFile.Encrypt(decrPath, encrPath, EncrDirectory.DerivedBytesProvider, options);
+                if (logEntry != null && (File.GetLastWriteTimeUtc(encrPath) - logEntry.EncrModified).TotalMilliseconds < encrTimespanPrecisionMS)
+                {
+                    File.SetLastWriteTimeUtc(encrPath, logEntry.EncrModified + TimeSpan.FromMilliseconds(encrTimespanPrecisionMS));
+                }
+
+                SyncLog.Add(CreateEntryFromHeader(header, FileEntry.FromFile(encrPath, EncrDirectory.DirectoryPath)));
+                return SyncStatus.Success;
+            }
+            else if (entry.SyncMode == PreSyncMode.EncryptedSide)
+            {
+                SyncLogEntry logEntry = entry.LogEntry;
+                SyncLogEntry fileSystemEntry = CreateNewLogEntryFromEncrPath(entry.EncrFileName);
+                if (logEntry?.ToString() == fileSystemEntry?.ToString())
+                    return SyncStatus.Skipped; //Unchanged
+
+                //todo: test to see if there are illegal characters
+                //todo: check if the name matches
+
+                string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.EncrFileName));
+                string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.DecrFileName));
+
+                //todo: if file exists with different case - skip file
+                HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
+                //todo: get the date on the file system (needed if the filesystem has less percission
+
+                SyncLog.Add(fileSystemEntry);
+                return SyncStatus.Success;
+            }
+
+            return SyncStatus.Failure;
+        }
+
 
         public void Dispose()
         {

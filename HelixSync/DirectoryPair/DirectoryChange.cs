@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace HelixSync
 {
+    [Obsolete]
     public class DirectoryChange
     {
         public DirectoryChange(PairSide side, string fileName)
