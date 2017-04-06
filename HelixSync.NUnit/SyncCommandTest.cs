@@ -122,14 +122,14 @@ namespace HelixSync.NUnit
             for (int i = 0; i < 10; i++)
             {
                 Decr1.UpdateTo("A < xyz");
-                SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
-                SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
+                SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
+                SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
                 Decr1.AssertEqual(new string[] { "A < xyz" });
                 Decr2.AssertEqual(new string[] { "A < xyz" });
 
                 Decr1.UpdateTo("a");
-                SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
-                SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
+                SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
+                SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
                 Decr1.AssertEqual(new string[] { "a" });
                 Decr2.AssertEqual(new string[] { "a" });
             }
@@ -155,14 +155,14 @@ namespace HelixSync.NUnit
             string[] d2str = (d2 ?? (new byte[] { })).Select(d => choices[d % choices.Length]).ToArray();
 
             Decr1.UpdateTo(d1str);
-            SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
-            SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
+            SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
+            SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
             Decr1.AssertEqual(d1str);
             Decr2.AssertEqual(d1str);
 
             Decr1.UpdateTo(d2str);
-            SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
-            SyncDecr2andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
+            SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
+            SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
             Decr1.AssertEqual(d2str);
             Decr2.AssertEqual(d2str);
         }
@@ -180,7 +180,7 @@ namespace HelixSync.NUnit
             Decr1.Subdirectory("d1").AssertEqual(d1str);
             Decr2.Subdirectory("d2").AssertEqual(d2str);
 
-            SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Decrypted));
+            SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
             Decr1.Subdirectory("d1").AssertEqual(d1str);
             SyncDecr1andEncr1(p => Assert.Fail("Unexpected change post sync"));
 
@@ -189,7 +189,7 @@ namespace HelixSync.NUnit
             Decr2.Subdirectory("d2").AssertEqual(d2str);
             SyncDecr2andEncr1(p => Assert.Fail("Unexpected change post sync"));
 
-            SyncDecr1andEncr1(p => Assert.IsTrue(p.Side == PairSide.Encrypted));
+            SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
             Decr1.Subdirectory("d1").AssertEqual(d1str);
             Decr1.Subdirectory("d2").AssertEqual(d2str);
 

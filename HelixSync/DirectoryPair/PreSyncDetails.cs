@@ -18,8 +18,6 @@ namespace HelixSync
         public FileEntry EncrHeader { get; set; }
         public SyncLogEntry LogEntry { get; set; }
 
-        [Obsolete]
-        public PairSide Side { get; set; }
 
         public string EncrFileName { get; set; }
         public string DecrFileName { get; set; }

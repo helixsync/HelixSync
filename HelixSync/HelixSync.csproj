@@ -48,13 +48,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DirectoryPair\DirectoryPair.cs" />
     <Compile Include="DirectoryPair\PreSyncMode.cs" />
     <Compile Include="DirectoryPair\PreSyncOperation.cs" />
     <Compile Include="HelixFile\AuthenticatedEncryption\AuthenticatedEncryptionException.cs" />
     <Compile Include="HelixFile\AuthenticatedEncryption\CryptoStream2.cs" />
     <Compile Include="ConsoleEx.cs" />
-    <Compile Include="DirectoryPair\DirectoryChange.cs" />
-    <Compile Include="DirectoryPair\DirectoryPair.cs" />
     <Compile Include="HelixFile\AuthenticatedEncryption\DerivedBytesProvider.cs" />
     <Compile Include="DirectoryPair\PairSide.cs" />
     <Compile Include="DirectoryPair\SyncStatus.cs" />
@@ -64,7 +63,6 @@
     <Compile Include="HelixFile\HelixFileVersion.cs" />
     <Compile Include="HelixFile\InvalidPasswordException.cs" />
     <Compile Include="HelixFile\UnsupportedFileTypeException.cs" />
-    <Compile Include="HelixWatcher\DoubleDelayedQueue.cs" />
     <Compile Include="HelixDirectory\HelixDecrDirectory.cs" />
     <Compile Include="HelixDirectory\DirectoryHeader.cs" />
     <Compile Include="HelixDirectory\FileNameEncoder.cs" />
@@ -79,11 +77,9 @@
     <Compile Include="HelixFile\FileEncryptOptions.cs" />
     <Compile Include="HelixFile\HelixFile.cs" />
     <Compile Include="HelixUtil.cs" />
-    <Compile Include="HelixWatcher\HelixWatcher.cs" />
     <Compile Include="HelixFile\AuthenticatedEncryption\DerivedBytes.cs" />
     <Compile Include="HelixFile\AuthenticatedEncryption\AuthenticatedEncryptor.cs" />
     <Compile Include="HelixFile\HelixFileEncryptor.cs" />
-    <Compile Include="HelixWatcher\HelixWorker.cs" />
     <Compile Include="HelixFile\HMACEncryption\ByteBlock.cs" />
     <Compile Include="HelixFile\HMACEncryption\ByteBlockStream.cs" />
     <Compile Include="HelixFile\HMACEncryption\HMACBase.cs" />
