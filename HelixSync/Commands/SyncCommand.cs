@@ -140,7 +140,7 @@ namespace HelixSync
                     consoleEx.WriteLine("Key: [+] Add  [-] Remove  [c] Change  [x] Drop Delete Stub");
                     consoleEx.WriteLine("");
 
-                    List<PreSyncDetails> changes = pair.FindChanges2();
+                    List<PreSyncDetails> changes = pair.FindChanges();
 
                     //List<DirectoryChange> changes = pair.FindChanges();
                     if (changes.Count == 0)

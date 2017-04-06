@@ -126,7 +126,7 @@ namespace HelixSync
                 if (entry.Item2 == null)
                 {
                     //New Entry (not in log or decrypted file)
-                    preSyncDetails.Add(new HelixSync.PreSyncDetails { EncrInfo = entry.Item1 });
+                    preSyncDetails.Add(new HelixSync.PreSyncDetails { EncrInfo = entry.Item1, EncrFileName = entry.Item1.FileName });
                 }
                 else
                 {
@@ -141,7 +141,7 @@ namespace HelixSync
             return preSyncDetails;
         }
 
-        public List<PreSyncDetails> FindChanges2()
+        public List<PreSyncDetails> FindChanges()
         {
             var rng = RandomNumberGenerator.Create();
 
@@ -156,8 +156,8 @@ namespace HelixSync
                 RefreshPreSyncMode(match);
             }
 
-            //todo: sort dependencies
-
+            //todo: reorder based on dependencies
+            //todo: detect conflicts
             return matches.OrderBy(m =>
                 {
                     byte[] rno = new byte[5];
@@ -352,30 +352,6 @@ namespace HelixSync
             RefreshPreSyncMode(preSyncDetails);
         }
 
-
-
-
-        [Obsolete]
-        public List<DirectoryChange> FindChanges()
-        {
-            List<DirectoryChange> result = new List<DirectoryChange>();
-
-            //todo: instead of doing this return the PreSyncDetails directly
-            //todo: detect conflicts
-            foreach (PreSyncDetails preSyncDetail in MatchFiles())
-            {
-                if ((preSyncDetail?.LogEntry?.DecrModified ?? DateTime.MinValue) != (preSyncDetail?.DecrInfo?.LastWriteTimeUtc ?? DateTime.MinValue) ||
-                    (preSyncDetail?.LogEntry?.EntryType ?? FileEntryType.Removed) != (preSyncDetail?.DecrInfo?.EntryType ?? FileEntryType.Removed))
-                {
-                    result.Add(new DirectoryChange(PairSide.Decrypted, preSyncDetail?.DecrInfo?.FileName ?? preSyncDetail?.LogEntry?.DecrFileName));
-                }
-                else if (preSyncDetail?.LogEntry?.EncrModified != preSyncDetail?.EncrInfo?.LastWriteTimeUtc)
-                    result.Add(new DirectoryChange(PairSide.Encrypted, preSyncDetail?.EncrInfo?.FileName ?? preSyncDetail?.LogEntry?.EncrFileName));
-            }
-
-            return result;
-        }
-
         public SyncLogEntry CreateNewLogEntryFromDecrPath(string decrFileName)
         {
             FileEntry decrEntry = DecrDirectory.GetFileEntry(decrFileName);
@@ -413,15 +389,14 @@ namespace HelixSync
         }
 
 
+        public const int encrTimespanPrecisionMS = 1000;
+
         public SyncStatus TrySync(DirectoryChange entry)
         {
             string message;
             bool retry;
             return TrySync(entry, out retry, out message);
         }
-
-        public const int encrTimespanPrecisionMS = 1000;
-
         public SyncStatus TrySync(DirectoryChange entry, out bool retry, out string message)
         {
             if (WhatIf)
@@ -480,6 +455,12 @@ namespace HelixSync
         }
 
 
+        public SyncStatus TrySync(PreSyncDetails entry)
+        {
+            string message;
+            bool retry;
+            return TrySync(entry, out retry, out message);
+        }
         public SyncStatus TrySync(PreSyncDetails entry, out bool retry, out string message)
         {
             if (WhatIf)

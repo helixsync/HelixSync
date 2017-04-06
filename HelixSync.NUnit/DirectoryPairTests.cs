@@ -56,7 +56,7 @@ namespace HelixSync.NUnit
             {
                 var changes = origToEncr.FindChanges();
                 Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual("test.txt", changes[0].FileName);
+                Assert.AreEqual("test.txt", changes[0].DecrFileName);
 
                 Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
 
@@ -65,8 +65,8 @@ namespace HelixSync.NUnit
                 //New (Encr => Decr)
                 changes = encrToDecr.FindChanges();
                 Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual(PairSide.Encrypted, changes[0].Side);
-                Assert.IsTrue(changes[0].FileName.EndsWith(".hx"));
+                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
 
                 Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
@@ -80,7 +80,8 @@ namespace HelixSync.NUnit
                 Util.WriteTextFile("Orig/test2.txt", "aa");
                 changes = origToEncr.FindChanges();
                 Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual("test2.txt", changes[0].FileName);
+                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.DecryptedSide);
+                Assert.AreEqual("test2.txt", changes[0].DecrFileName);
 
                 Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
 
@@ -89,8 +90,8 @@ namespace HelixSync.NUnit
                 //Add (Encr => Decr)
                 changes = encrToDecr.FindChanges();
                 Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual(PairSide.Encrypted, changes[0].Side);
-                Assert.IsTrue(changes[0].FileName.EndsWith(".hx"));
+                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
 
                 Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
@@ -109,7 +110,8 @@ namespace HelixSync.NUnit
                 Util.WriteTextFile("Orig/test.txt", "hello world2");
                 changes = origToEncr.FindChanges();
                 Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual("test.txt", changes[0].FileName);
+                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.DecryptedSide);
+                Assert.AreEqual("test.txt", changes[0].DecrFileName);
 
                 Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
 
@@ -118,8 +120,8 @@ namespace HelixSync.NUnit
                 //Update (Encr => Decr)
                 changes = encrToDecr.FindChanges();
                 Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual(PairSide.Encrypted, changes[0].Side);
-                Assert.IsTrue(changes[0].FileName.EndsWith(".hx"));
+                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
 
                 Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
@@ -138,7 +140,8 @@ namespace HelixSync.NUnit
                 File.Delete(Util.Path("Orig/test.txt"));
                 changes = origToEncr.FindChanges();
                 Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual("test.txt", changes[0].FileName);
+                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.DecryptedSide);
+                Assert.AreEqual("test.txt", changes[0].DecrFileName);
 
                 Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
                 Assert.IsTrue(origToEncr.DecrDirectory.SyncLog.FindByDecrFileName("test.txt").EntryType == FileEntryType.Removed);
@@ -148,8 +151,8 @@ namespace HelixSync.NUnit
                 //Delete (Encr => Decr)
                 changes = encrToDecr.FindChanges();
                 Assert.AreEqual(1, changes.Count, "Delete change did not propigate correctly");
-                Assert.AreEqual(PairSide.Encrypted, changes[0].Side);
-                Assert.IsTrue(changes[0].FileName.EndsWith(".hx"));
+                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
 
                 Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
@@ -235,7 +238,7 @@ namespace HelixSync.NUnit
 
                 //Encr => Decr
                 Assert.AreEqual(2, encrToDecr.FindChanges().Count); //delete + create
-                Assert.That(encrToDecr.FindChanges().All(e => e.Side == PairSide.Encrypted));
+                Assert.That(encrToDecr.FindChanges().All(e => e.SyncMode == PreSyncMode.EncryptedSide));
                 encrToDecr.SyncChanges();
                 Assert.AreEqual(0, origToEncr.FindChanges().Count);
 
