@@ -15,7 +15,6 @@ namespace HelixSync.NUnit
         public void Setup()
         {
             System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(typeof(AssemblySetup).GetTypeInfo().Assembly.Location));
-            //Environment.CurrentDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         }
     }
 }

@@ -26,7 +26,6 @@ namespace HelixSync.NUnit
         public void ResetDirectory()
         {
             System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(typeof(AssemblySetup).GetTypeInfo().Assembly.Location));
-            //Environment.CurrentDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             if (Directory.Exists("1-Orig"))
                 Directory.Delete("1-Orig", true);
             if (Directory.Exists("2-Encr"))

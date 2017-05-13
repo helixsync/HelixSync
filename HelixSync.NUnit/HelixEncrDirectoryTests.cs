@@ -20,7 +20,6 @@ namespace HelixSync.NUnit
         [TearDown]
         public void ResetDirectory()
         {
-            //Environment.CurrentDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(typeof(AssemblySetup).GetTypeInfo().Assembly.Location));
             Directory.CreateDirectory("hxdir");
             Directory.Delete("hxdir", true);
