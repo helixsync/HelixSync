@@ -26,11 +26,10 @@ namespace HelixSync
         }
         private static string GetVersion()
         {
-            return typeof(Program).GetTypeInfo().Assembly
-                .GetCustomAttributes(typeof(AssemblyVersionAttribute))
-                .OfType<AssemblyVersionAttribute>()
-                .FirstOrDefault()
-                ?.Version;
+            return typeof(Program).GetTypeInfo()
+                .Assembly
+                .GetName()
+                .Version.ToString();
         }
         static int Main(string[] args)
         {
@@ -50,8 +49,8 @@ namespace HelixSync
 
             if (args.Length <= 0){
                 Console.WriteLine("Usage");
-                Console.WriteLine("helixsync inspect {file} [options]");
-                Console.WriteLine("helixsync sync {source} {destination}");
+                Console.WriteLine("helixsync inspect \"file\" [options]");
+                Console.WriteLine("helixsync sync \"source\" \"destination\" [options]");
                 return -1;
             }
             else if (string.Equals(args[0], "inspect", StringComparison.OrdinalIgnoreCase))
