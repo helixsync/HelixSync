@@ -10,9 +10,9 @@ using HelixSync;
 using System.IO;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class HelixFileEncryptorTests
+    public class HelixFileEncryptor_Tests
     {
         [Fact]
         public void HelixFileDecryptor_EncryptThenDecrypt()

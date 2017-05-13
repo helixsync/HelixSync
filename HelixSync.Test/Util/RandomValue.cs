@@ -14,7 +14,7 @@ using FsCheck;
 using static FsCheck.Random;
 
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
     class RandomValue
     {

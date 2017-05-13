@@ -9,9 +9,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class SyncLogEntryTest
+    public class SyncLogEntry_Tests
     {        
 #if FSCHECK
         [Test]

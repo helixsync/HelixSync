@@ -3,7 +3,7 @@
 
 using System;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
     [Flags]
     public enum RandomValueOptions

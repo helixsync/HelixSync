@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 using System.Reflection;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class DirectoryHeaderTests : IDisposable
+    public class DirectoryHeader_Tests : IDisposable
     {
-        public DirectoryHeaderTests ()
+        public DirectoryHeader_Tests ()
         {
             ResetDirectory();
         }

@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
     public class DirectoryTester : IDisposable
     {

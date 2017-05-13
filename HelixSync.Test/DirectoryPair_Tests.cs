@@ -11,15 +11,15 @@ using System.Threading.Tasks;
 using System.Reflection;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class DirectoryPairTests : IDisposable
+    public class DirectoryPair_Tests : IDisposable
     {
         //FAT > 2000 (to accomidate time stamp presision
         //NFTS > 10 
         const int timeStampPrecision = 2000;
 
-        public DirectoryPairTests(){
+        public DirectoryPair_Tests(){
             ResetDirectory();
         }
 

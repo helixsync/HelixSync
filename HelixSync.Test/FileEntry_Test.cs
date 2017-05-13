@@ -4,7 +4,7 @@
 using System;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
     public class FileEntry_Test
     {

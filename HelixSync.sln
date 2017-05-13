@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelixSync.NUnit", "HelixSync.NUnit\HelixSync.NUnit.csproj", "{2298ECF0-CB44-40E9-A9D2-5419E5A8614C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelixSync", "HelixSync\HelixSync.csproj", "{94E739A9-9105-4877-9590-BFE92E96B2BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelixSync.Test", "HelixSync.Test\HelixSync.Test.csproj", "{2298ECF0-CB44-40E9-A9D2-5419E5A8614C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CC3DA903-005E-41A0-969B-62C567065531}"
 	ProjectSection(SolutionItems) = preProject

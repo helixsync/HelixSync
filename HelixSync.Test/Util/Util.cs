@@ -5,7 +5,7 @@ using HelixSync;
 using System;
 using System.IO;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
 	public static class Util
 	{

@@ -14,16 +14,16 @@ using HelixSync;
 using System.Threading;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class SyncCommandTest : IDisposable
+    public class SyncCommand_Tests : IDisposable
     {
         public DirectoryTester Decr1 = new DirectoryTester("Decr1", new Regex(@"\.helix.*"));
         public DirectoryTester Decr2 = new DirectoryTester("Decr2", new Regex(@"\.helix.*"));
         public DirectoryTester Encr1 = new DirectoryTester("Encr1");
         public DirectoryTester Encr2 = new DirectoryTester("Encr2");
 
-        public SyncCommandTest() 
+        public SyncCommand_Tests() 
         {
             Decr1.Clear(true);
             Decr2.Clear(true);

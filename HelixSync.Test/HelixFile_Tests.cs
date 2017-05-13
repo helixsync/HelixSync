@@ -13,9 +13,9 @@ using FsCheck;
 #endif
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class HelixFileTests
+    public class HelixFile_Tests
     {
         public static void Delete(params string[] files)
         {

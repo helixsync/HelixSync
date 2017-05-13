@@ -9,9 +9,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class FileNameEncoderTests
+    public class FileNameEncoder_Tests
     {
         [Fact]
         public void FileNameEncoder_EncodeName()

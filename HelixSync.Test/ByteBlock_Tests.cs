@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
     public class ByteBlock_Tests
     {

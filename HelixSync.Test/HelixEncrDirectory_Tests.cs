@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 using System.Reflection;
 using Xunit;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
-    public class HelixEncrDirectoryTests : IDisposable
+    public class HelixEncrDirectory_Tests : IDisposable
     {
-        public HelixEncrDirectoryTests(){
+        public HelixEncrDirectory_Tests(){
             ResetDirectory();
         }
         public void Dispose() {

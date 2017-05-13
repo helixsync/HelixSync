@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HelixSync.NUnit
+namespace HelixSync.Test
 {
     static class ToHexEx
     {
