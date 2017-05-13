@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 
 namespace HelixSync
 {
@@ -17,10 +18,17 @@ namespace HelixSync
         {
             get
             {
+#if NET_CORE
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    return false;
+                else
+                    return true;
+#else
                 if (Environment.OSVersion.Platform == PlatformID.Unix)
                     return true;
                 else
                     return false;
+#endif
             }
         }
 
@@ -88,7 +96,7 @@ namespace HelixSync
                     //When using Linux with a cases insensitive file system Linux still does a case sensitive search
                     //So we have to do a full search to make this work correctly
                     properCaseName = di.Parent.GetFileSystemInfos()
-                        .Where(i => string.Equals(i.Name, di.Name, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+                        .Where(i => string.Equals(i.Name, di.Name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
                 }
 
                 if (properCaseName == null)
@@ -115,10 +123,10 @@ namespace HelixSync
             if (path == root)
                 return "";
 
-            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.InvariantCulture))
+            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
                 root = root + Path.DirectorySeparatorChar;
 
-            if (!path.StartsWith(root, StringComparison.InvariantCulture))
+            if (!path.StartsWith(root, StringComparison.Ordinal))
                 throw new ArgumentOutOfRangeException(nameof(path), "path must start with the root directory (path:" + path + ", root: " + root + ")");
 
             return path.Substring(root.Length);

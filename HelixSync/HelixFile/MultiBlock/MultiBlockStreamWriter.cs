@@ -64,21 +64,13 @@ namespace HelixSync
             streamOut.Flush();
         }
 
-        /// <summary>
-        /// Closes the current stream and releases resources
-        /// </summary>
-        public void Close()
-        {
-            streamOut.Close();
-        }
-
         bool isDisposed;
         public void Dispose()
         {
             if (!isDisposed)
             {
                 isDisposed = true;
-                streamOut.Close();
+                streamOut.Dispose();
             }
         }
     }

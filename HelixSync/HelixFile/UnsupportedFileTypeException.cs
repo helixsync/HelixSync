@@ -3,7 +3,9 @@ using System.Runtime.Serialization;
 
 namespace HelixSync
 {
+#if !NET_CORE
     [Serializable]
+#endif
     public class UnsupportedFileTypeException : HelixException
     {
         public UnsupportedFileTypeException()
@@ -18,8 +20,10 @@ namespace HelixSync
         {
         }
 
+#if !NET_CORE
         protected UnsupportedFileTypeException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+#endif
     }
 }

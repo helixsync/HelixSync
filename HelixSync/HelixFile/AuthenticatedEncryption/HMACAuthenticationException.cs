@@ -6,7 +6,9 @@ using System.Runtime.Serialization;
 
 namespace HelixSync
 {
+#if !NET_CORE
     [Serializable]
+#endif
     internal class HMACAuthenticationException : AuthenticatedEncryptionException
     {
         public HMACAuthenticationException()
@@ -21,8 +23,10 @@ namespace HelixSync
         {
         }
 
+#if !NET_CORE
         protected HMACAuthenticationException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+#endif
     }
 }

@@ -6,9 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FsCheck;
+
 using System.IO;
+
+#if FSCHECK
+using FsCheck;
 using static FsCheck.Random;
+
 
 namespace HelixSync.NUnit
 {
@@ -136,3 +140,4 @@ namespace HelixSync.NUnit
         }
     }
 }
+#endif

@@ -24,6 +24,7 @@ namespace HelixSync.NUnit
             Assert.AreEqual(@"bb", HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @"aa"));
         }
 
+#if FSCHECK
         [FsCheck.NUnit.Property]
         public void HelixUtil_QuoteUnquote(string val)
         {
@@ -32,5 +33,6 @@ namespace HelixSync.NUnit
 
             Assert.AreEqual(val, HelixUtil.Unquote(HelixUtil.Quote(val)));
         }
+#endif
     }
 }

@@ -144,6 +144,7 @@ namespace HelixSync.NUnit
             "A",
         };
 
+#if FSCHECK
         [FsCheck.NUnit.Property]
         public void SyncCommand_OneWaySync_NoConflict_FuzzTesting(byte[] d1, byte[] d2)
         {
@@ -166,8 +167,9 @@ namespace HelixSync.NUnit
             Decr1.AssertEqual(d2str);
             Decr2.AssertEqual(d2str);
         }
+#endif
 
-
+#if FSCHECK
         [FsCheck.NUnit.Property]
         public void SyncCommand_TwoWaySync_NoConflict_FuzzTesting(byte[] d1, byte[] d2)
         {
@@ -194,7 +196,7 @@ namespace HelixSync.NUnit
             Decr1.Subdirectory("d2").AssertEqual(d2str);
 
         }
-
+#endif
 
         public void DirectoryAreEqual(DirectoryTester tester, string content, string message)
         {

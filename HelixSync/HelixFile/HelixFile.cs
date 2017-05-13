@@ -61,7 +61,11 @@ namespace HelixSync
                 }
 
                 options.Log?.Debug("Destaging: Moving staged to normal");
-                File.Replace(encrStagedFileName, encrFilePath, encrBackupFileName);
+                
+                if (File.Exists(encrFilePath))
+                    File.Move(encrFilePath, encrBackupFileName);
+                File.Move(encrStagedFileName, encrFilePath);
+                
                 options.Log?.Debug("Destaging: Removing backup");
                 File.Delete(encrBackupFileName);
             }
@@ -191,9 +195,9 @@ namespace HelixSync
         /// </summary>
         public static void CleanupFile(string filePath, Logger log = null)
         {
-            if (filePath.EndsWith(HelixConsts.BackupExtention, StringComparison.InvariantCultureIgnoreCase))
+            if (filePath.EndsWith(HelixConsts.BackupExtention, StringComparison.OrdinalIgnoreCase))
                 filePath = filePath.Substring(0, filePath.Length - HelixConsts.BackupExtention.Length);
-            else if (filePath.EndsWith(HelixConsts.StagedHxExtention, StringComparison.InvariantCultureIgnoreCase))
+            else if (filePath.EndsWith(HelixConsts.StagedHxExtention, StringComparison.OrdinalIgnoreCase))
                 filePath = filePath.Substring(0, filePath.Length - HelixConsts.StagedHxExtention.Length);
 
             var stagedFileName = filePath + HelixConsts.StagedHxExtention;

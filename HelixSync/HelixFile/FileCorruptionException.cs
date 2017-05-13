@@ -3,7 +3,9 @@ using System.Runtime.Serialization;
 
 namespace HelixSync
 {
+#if !NET_CORE
     [Serializable]
+#endif
     public class FileCorruptionException : HelixException
     {
         public FileCorruptionException()
@@ -18,8 +20,10 @@ namespace HelixSync
         {
         }
 
+#if !NET_CORE
         protected FileCorruptionException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+#endif
     }
 }

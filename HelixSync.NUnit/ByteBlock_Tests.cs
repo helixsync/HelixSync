@@ -21,6 +21,7 @@ namespace HelixSync.NUnit
             Assert.AreEqual(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 1 }), -1);            
         }
 
+#if FSCHECK
         [FsCheck.NUnit.Property]
         public void ByteBlock_CompareConstantTime_RandomTests(byte a, byte b, byte c, byte d)
         {
@@ -44,6 +45,7 @@ namespace HelixSync.NUnit
             }
 
         }
+#endif
 
         public int Compare2(byte byteA, byte byteB)
         {

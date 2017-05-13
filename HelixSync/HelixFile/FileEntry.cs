@@ -42,7 +42,7 @@ namespace HelixSync
                 return false;
             }
 
-            if (correctedFileName.StartsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.InvariantCulture))
+            if (correctedFileName.StartsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
             {
                 exception = new HeaderCorruptionException("FileName starts with a directory separator  (potential path traversal)");
                 return false;
@@ -71,7 +71,7 @@ namespace HelixSync
             var fi = new FileInfo(casedFullPath);
 
             //Check to ensure ends with to address case changes
-            if (fi.Exists && fi.FullName.EndsWith(fullPath, StringComparison.InvariantCulture))
+            if (fi.Exists && fi.FullName.EndsWith(fullPath, StringComparison.Ordinal))
             {
                 fileInfo.LastWriteTimeUtc = HelixUtil.TruncateTicks(fi.LastWriteTimeUtc);
                 fileInfo.Length = fi.Length;
@@ -80,7 +80,7 @@ namespace HelixSync
             }
 
             var di = new DirectoryInfo(casedFullPath);
-            if (di.Exists && di.FullName.EndsWith(fullPath, StringComparison.InvariantCulture))
+            if (di.Exists && di.FullName.EndsWith(fullPath, StringComparison.Ordinal))
             {
                 fileInfo.LastWriteTimeUtc = DateTime.MinValue;
                 fileInfo.EntryType = FileEntryType.Directory;

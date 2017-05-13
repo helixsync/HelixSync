@@ -32,7 +32,7 @@ namespace HelixSync
 
             List<byte[]> checksums = new List<byte[]>();
 
-            using (SHA256Managed sha = new SHA256Managed())
+            using (SHA256 sha = SHA256.Create())
             {
                 if (password != null)
                 {

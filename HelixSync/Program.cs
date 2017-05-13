@@ -11,25 +11,23 @@ namespace HelixSync
     {
         private static string GetCopyright()
         {
-            return Assembly.GetExecutingAssembly()
-                .GetCustomAttributes(false)
+            return typeof(Program).GetTypeInfo().Assembly
+                .GetCustomAttributes(typeof(AssemblyCopyrightAttribute))
                 .OfType<AssemblyCopyrightAttribute>()
-                .FirstOrDefault()
-                ?.Copyright;
+                .FirstOrDefault()?.Copyright;
         }
 
         private static string GetTitle()
         {
-            return Assembly.GetExecutingAssembly()
-                .GetCustomAttributes(false)
+            return typeof(Program).GetTypeInfo().Assembly
+                .GetCustomAttributes(typeof(AssemblyTitleAttribute))
                 .OfType<AssemblyTitleAttribute>()
-                .FirstOrDefault()
-                ?.Title;
+                .FirstOrDefault()?.Title;
         }
         private static string GetVersion()
         {
-            return Assembly.GetExecutingAssembly()
-                .GetCustomAttributes(false)
+            return typeof(Program).GetTypeInfo().Assembly
+                .GetCustomAttributes(typeof(AssemblyVersionAttribute))
                 .OfType<AssemblyVersionAttribute>()
                 .FirstOrDefault()
                 ?.Version;
@@ -39,8 +37,8 @@ namespace HelixSync
             //                 -----------------------------------------------------------------------------80
             Console.WriteLine("{0} v{1}         ::  {2}", 
                 GetTitle(), 
-                typeof(Program).Assembly.GetName().Version,
-                GetCopyright().Replace("©", "(c)"));
+                GetVersion(),
+                (GetCopyright() ?? "").Replace("©", "(c)"));
             Console.WriteLine();
             Console.WriteLine("This program comes with ABSOLUTELY NO WARRANTY; Read LICENCE for details");
             Console.WriteLine("This is free software and can redistribute it under GPLv3 terms");
@@ -50,7 +48,13 @@ namespace HelixSync
             Console.WriteLine("** ALWAYS backup your data before using **");
             Console.WriteLine();
 
-            if (string.Equals(args[0], "inspect", StringComparison.OrdinalIgnoreCase))
+            if (args.Length <= 0){
+                Console.WriteLine("Usage");
+                Console.WriteLine("helixsync inspect {file} [options]");
+                Console.WriteLine("helixsync sync {source} {destination}");
+                return -1;
+            }
+            else if (string.Equals(args[0], "inspect", StringComparison.OrdinalIgnoreCase))
             {
                 var options = new InspectOptions();
                 ArgumentParser.ParseCommandLineArguments(options, args, 1);

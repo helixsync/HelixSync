@@ -38,7 +38,7 @@ namespace HelixSync
                         .FirstOrDefault();
 
                     if (positionalProperty == null)
-                        throw new ApplicationException("To many positional arguments");
+                        throw new ArgumentParseException("To many positional arguments");
                     positionalProperty.SetValue(optionsObj, arg);
 
                     pos++;
@@ -59,15 +59,15 @@ namespace HelixSync
                         .FirstOrDefault();
 
                     if (propertyInfo == null)
-                        throw new ApplicationException("Invalid Option " + arg);
+                        throw new ArgumentParseException("Invalid Option " + arg);
 
                     if (propertyInfo.PropertyType == typeof(string))
                     {
                         if (!string.IsNullOrEmpty(argOpt))
-                            throw new ApplicationException("Invalid Option " + arg);
+                            throw new ArgumentParseException("Invalid Option " + arg);
 
                         if (args.Length <= i + 1)
-                            throw new ApplicationException("Expecting a value after the argument " + arg);
+                            throw new ArgumentParseException("Expecting a value after the argument " + arg);
 
                         i++;
                         var val = args[i];
@@ -81,16 +81,16 @@ namespace HelixSync
                         {
                             bool valueOut;
                             if (!bool.TryParse(argOpt, out valueOut))
-                                throw new ApplicationException("Invalid Argument Option (" + argOpt + " expecting -" + argName + ":true or -" + argName + ":false");
+                                throw new ArgumentParseException("Invalid Argument Option (" + argOpt + " expecting -" + argName + ":true or -" + argName + ":false");
                             propertyInfo.SetValue(optionsObj, valueOut);
                         }
                     }
                     else if (propertyInfo.PropertyType == typeof(string[]))
                     {
                         if (!string.IsNullOrEmpty(argOpt))
-                            throw new ApplicationException("Invalid Option " + arg);
+                            throw new ArgumentParseException("Invalid Option " + arg);
                         if (args.Length <= i + 1)
-                            throw new ApplicationException("Expecting a value after the argument " + arg);
+                            throw new ArgumentParseException("Expecting a value after the argument " + arg);
 
                         i++;
                         string val = args[i];
@@ -100,7 +100,7 @@ namespace HelixSync
                     }
                     else 
                     {
-                        throw new ApplicationException("Unsupported Option " + arg);
+                        throw new ArgumentParseException("Unsupported Option " + arg);
                     }
 
                 }

@@ -108,11 +108,6 @@ namespace HelixSync
             encryptor.FlushFinalBlock();
         }
 
-        public void Close()
-        {
-            encryptor.Close();
-        }
-
         private bool isDisposed;
 
         public bool IsDisposed

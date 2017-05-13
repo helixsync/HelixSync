@@ -14,7 +14,7 @@ namespace HelixSync.NUnit
     [TestFixture]
     public class SyncLogEntryTest
     {        
-
+#if FSCHECK
         [Test]
         public void SyncLogEntry_PropTesting()
         {
@@ -45,7 +45,7 @@ namespace HelixSync.NUnit
                 Assert.AreEqual(entry.DecrModified, entry2.DecrModified);
             }
         }
-
+#endif
 
     }
 }

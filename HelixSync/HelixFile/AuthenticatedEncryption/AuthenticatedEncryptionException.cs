@@ -6,7 +6,9 @@ using System.Runtime.Serialization;
 
 namespace HelixSync
 {
+#if !NET_CORE
     [Serializable]
+#endif
     class AuthenticatedEncryptionException : Exception
     {
         public AuthenticatedEncryptionException()
@@ -21,8 +23,10 @@ namespace HelixSync
         {
         }
 
+#if !NET_CORE
         protected AuthenticatedEncryptionException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
+#endif
     }
 }

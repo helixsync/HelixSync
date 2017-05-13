@@ -153,7 +153,7 @@ namespace HelixSync
                     continue;
                 if (string.Equals(fileName, HelixConsts.SyncLogDirectory))
                     continue;
-                if (fileName.StartsWith(HelixConsts.SyncLogDirectory + Path.DirectorySeparatorChar, StringComparison.InvariantCulture))
+                if (fileName.StartsWith(HelixConsts.SyncLogDirectory + Path.DirectorySeparatorChar, StringComparison.Ordinal))
                     continue;
                 if (Path.GetExtension(fileName) == HelixConsts.StagedHxExtention)
                     continue;

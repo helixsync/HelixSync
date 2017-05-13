@@ -13,7 +13,7 @@ namespace HelixSync
         {
             consoleEx = consoleEx ?? new ConsoleEx();
             consoleEx.WriteLine("------------------------");
-            consoleEx.WriteLine("-- HelixSync " + Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            consoleEx.WriteLine("-- HelixSync " + typeof(SyncCommand).GetTypeInfo().Assembly.GetName().Version.ToString());
             consoleEx.WriteLine("------------------------");
             consoleEx.WriteLine();
 

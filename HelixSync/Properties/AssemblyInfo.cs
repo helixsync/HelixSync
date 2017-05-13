@@ -8,6 +8,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
+#if !NET_CORE
+//dotnet core includes this information as part of the project file
 [assembly: AssemblyTitle("HelixSync")]
 [assembly: AssemblyDescription("Decrypted to Encrypted Directory Syncronization")]
 [assembly: AssemblyConfiguration("")]
@@ -16,6 +18,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Copyright © 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+#endif
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
@@ -25,6 +28,8 @@ using System.Runtime.InteropServices;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("94e739a9-9105-4877-9590-bfe92e96b2bf")]
 
+
+#if !NET_CORE
 // Version information for an assembly consists of the following four values:
 //
 //      Major Version
@@ -36,3 +41,4 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("0.1.0.0")]
+#endif

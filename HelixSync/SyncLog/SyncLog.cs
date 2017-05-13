@@ -115,7 +115,9 @@ namespace HelixSync
         {
             if (writer != null)
             {
+#if !NET_CORE
                 writer.Close();
+#endif
                 writer.Dispose();
                 writer = null;
             }

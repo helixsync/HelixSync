@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
+
 using HelixSync.HMACEncryption;
 
 namespace HelixSync
@@ -17,7 +18,7 @@ namespace HelixSync
         HMACSHA256 hmacHash;
         CryptoStream hmacStream;
 
-        AesManaged aesTransform;
+        Aes aesTransform;
         CryptoStream aesStream;
 
         GZipStream gzipStream;
@@ -74,7 +75,15 @@ namespace HelixSync
             hmacTransform = new HMACEncrypt(header.headerAuthnDisk, hmacHash);
             hmacStream = new CryptoStream(streamOut, hmacTransform, CryptoStreamMode.Write);
 
-            aesTransform = new AesManaged { KeySize = 256, BlockSize = 128, Mode = CipherMode.CBC, Padding = PaddingMode.PKCS7, IV = iv, Key = derivedBytes.Key };
+
+            aesTransform = Aes.Create();
+            aesTransform.KeySize = 256;
+            aesTransform.BlockSize = 128;
+            aesTransform.Mode = CipherMode.CBC;
+            aesTransform.Padding = PaddingMode.PKCS7;
+            aesTransform.IV = iv;
+            aesTransform.Key = derivedBytes.Key;
+            
             aesStream = new CryptoStream(hmacStream, aesTransform.CreateEncryptor(), CryptoStreamMode.Write);
 
             gzipStream = new GZipStream(aesStream, CompressionMode.Compress, true);
@@ -98,7 +107,7 @@ namespace HelixSync
         /// </summary>
         public void FlushFinalBlock()
         {
-            gzipStream.Close();
+            gzipStream.Flush();
             aesStream.FlushFinalBlock();
             hmacStream.Flush();
             streamOut.Flush();

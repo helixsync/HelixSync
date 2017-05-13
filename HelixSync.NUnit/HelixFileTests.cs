@@ -8,7 +8,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+#if FSCHECK
 using FsCheck;
+#endif
 using NUnit.Framework;
 
 namespace HelixSync.NUnit
@@ -61,6 +63,7 @@ namespace HelixSync.NUnit
         }
 
         
+#if FSCHECK
         [Test]
         public void HelixFile_RandomPasswordAndContent()
         {
@@ -75,7 +78,9 @@ namespace HelixSync.NUnit
                  Assert.AreEqual(inp ?? "", File.ReadAllText("temp.decr"));
              }).QuickCheckThrowOnFailure();
         }
+#endif
 
+#if FSCHECK
         [Test]
         public void HelixFile_RandomCurruption()
         {
@@ -85,6 +90,7 @@ namespace HelixSync.NUnit
                 TestRandomCurruption(inp.Get, pos.Get, adj);
             }).QuickCheckThrowOnFailure();
         }
+#endif
 
         [Test]
         public void HelixFile_RandomCurruption_KnownIssues()

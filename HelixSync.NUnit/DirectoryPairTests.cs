@@ -25,7 +25,8 @@ namespace HelixSync.NUnit
         [TearDown]
         public void ResetDirectory()
         {
-            Environment.CurrentDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(typeof(AssemblySetup).GetTypeInfo().Assembly.Location));
+            //Environment.CurrentDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             if (Directory.Exists("1-Orig"))
                 Directory.Delete("1-Orig", true);
             if (Directory.Exists("2-Encr"))
@@ -160,6 +161,7 @@ namespace HelixSync.NUnit
             }
         }
 
+#if FSCHECK
         [Test]
         public void DirectoryPair_RandomizedInitialization()
         {
@@ -202,6 +204,7 @@ namespace HelixSync.NUnit
                 }
             }
         }
+#endif
 
         [Test]
         public void DirectoryPair_RenameCaseOnly()

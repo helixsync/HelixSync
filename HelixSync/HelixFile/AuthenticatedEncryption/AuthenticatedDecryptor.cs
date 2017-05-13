@@ -20,7 +20,7 @@ namespace HelixSync
         HMACSHA256 hmacHash;
         CryptoStream2 hmacStream;
 
-        AesManaged aesTransform;
+        Aes aesTransform;
         CryptoStream2 aesStream;
 
         GZipStream gzipStream;
@@ -77,15 +77,14 @@ namespace HelixSync
             hmacTransform = new HMACDecrypt(headerAuthnComputed, hmacHash);
             hmacStream = new CryptoStream2(streamIn, hmacTransform, CryptoStreamMode.Read);
 
-            aesTransform = new AesManaged
-            {
-                KeySize = 256,
-                BlockSize = 128,
-                Mode = CipherMode.CBC,
-                Padding = PaddingMode.PKCS7,
-                IV = header.iv,
-                Key = DerivedBytes.Key 
-            };
+            aesTransform = Aes.Create();
+            aesTransform.KeySize = 256;
+            aesTransform.BlockSize = 128;
+            aesTransform.Mode = CipherMode.CBC;
+            aesTransform.Padding = PaddingMode.PKCS7;
+            aesTransform.IV = header.iv;
+            aesTransform.Key = DerivedBytes.Key;
+            
             aesStream = new CryptoStream2(hmacStream, aesTransform.CreateDecryptor(), CryptoStreamMode.Read);
 
             gzipStream = new GZipStream(aesStream, CompressionMode.Decompress, true);
