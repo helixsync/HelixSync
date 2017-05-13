@@ -1,86 +1,17 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2298ECF0-CB44-40E9-A9D2-5419E5A8614C}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>HelixSync.NUnit</RootNamespace>
-    <AssemblyName>HelixSync.NUnit</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <DefineConstants>NET_CORE</DefineConstants>
+    <TestRunner>nunit</TestRunner>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FsCheck, Version=2.7.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FsCheck.2.7.2\lib\net45\FsCheck.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="FsCheck.NUnit, Version=2.7.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\FsCheck.NUnit.2.7.2\lib\net45\FsCheck.NUnit.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\FSharp.Core.4.1.0.2\lib\net45\FSharp.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ValueTuple, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
+    <PackageReference Include="dotnet-test-nunit" Version="3.4.0-beta-3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
+    <PackageReference Include="NUnit" Version="3.6.1" />
+    <PackageReference Include="NUnit.Runners" Version="3.6.1" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblySetup.cs" />
-    <Compile Include="DirectoryHeaderTests.cs" />
-    <Compile Include="DirectoryTester.cs" />
-    <Compile Include="DirectoryTester_Tests.cs" />
-    <Compile Include="ByteBlock_Tests.cs" />
-    <Compile Include="HelixFileEncryptorTests.cs" />
-    <Compile Include="SyncCommandTest.cs" />
-    <Compile Include="ToHexEx.cs" />
-    <Compile Include="DirectoryPairTests.cs" />
-    <Compile Include="Util.cs" />
-    <Compile Include="FileNameEncoderTests.cs" />
-    <Compile Include="HelixEncrDirectoryTests.cs" />
-    <Compile Include="HelixFileTests.cs" />
-    <Compile Include="SyncLogEntryTest.cs" />
-    <Compile Include="HelixUtilTests.cs" />
-    <Compile Include="RandomValue.cs" />
-    <Compile Include="RandomValueOptions.cs" />
-    <Compile Include="FileEntry_Test.cs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HelixSync\HelixSync.csproj">
-      <Project>{94e739a9-9105-4877-9590-bfe92e96b2bf}</Project>
-      <Name>HelixSync</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\HelixSync\HelixSync.csproj" />
   </ItemGroup>
 </Project>
