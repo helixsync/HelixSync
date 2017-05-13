@@ -7,14 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-    [TestFixture]
     public class FileNameEncoderTests
     {
-        [Test]
+        [Fact]
         public void FileNameEncoder_EncodeName()
         {
             var encoder1 = new FileNameEncoder(new byte[0]);
@@ -23,7 +22,7 @@ namespace HelixSync.NUnit
             var encoder2 = new FileNameEncoder(new byte[0]);
             var encodedName2 = encoder2.EncodeName("hello world.txt");
 
-            Assert.AreEqual(encodedName1, encodedName2);
+            Assert.Equal(encodedName1, encodedName2);
         }
     }
 }

@@ -1,24 +1,23 @@
 ﻿// This file is part of HelixSync, which is released under GPL-3.0 see
 // the included LICENSE file for full details
 
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-    [TestFixture]
     public class ByteBlock_Tests
     {
-        [Test]
+        [Fact]
         public void ByteBlock_CompareConstantTime_SimpleZeroOneTest()
         {
-            Assert.AreEqual(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 0 }), 0);
-            Assert.AreEqual(ByteBlock.CompareConstantTime(new byte[] { 1 }, new byte[] { 0 }), 1);
-            Assert.AreEqual(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 1 }), -1);            
+            Assert.Equal(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 0 }), 0);
+            Assert.Equal(ByteBlock.CompareConstantTime(new byte[] { 1 }, new byte[] { 0 }), 1);
+            Assert.Equal(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 1 }), -1);            
         }
 
 #if FSCHECK
@@ -55,10 +54,6 @@ namespace HelixSync.NUnit
                 return 1;
             else //if (byteB < byteA)
                 return -1;
-
-
         }
-
-    
     }
 }

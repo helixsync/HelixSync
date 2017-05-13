@@ -8,19 +8,23 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using System.Reflection;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-    [TestFixture]
-    public class HelixEncrDirectoryTests
+    public class HelixEncrDirectoryTests : IDisposable
     {
-        [SetUp]
-        [TearDown]
+        public HelixEncrDirectoryTests(){
+            ResetDirectory();
+        }
+        public void Dispose() {
+            ResetDirectory();
+        }
+
         public void ResetDirectory()
         {
-            System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(typeof(AssemblySetup).GetTypeInfo().Assembly.Location));
+            System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location));
             Directory.CreateDirectory("hxdir");
             Directory.Delete("hxdir", true);
 
@@ -29,7 +33,7 @@ namespace HelixSync.NUnit
         }
 
 
-        [Test]
+        [Fact]
         public void HelixEncrDirectory_NewThenLoad()
         {
             Directory.CreateDirectory("hxdir");

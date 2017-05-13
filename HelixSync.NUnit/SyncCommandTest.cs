@@ -1,7 +1,6 @@
 ﻿// This file is part of HelixSync, which is released under GPL-3.0 see
 // the included LICENSE file for full details
 
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,32 +12,30 @@ using System.Threading.Tasks;
 using System.Collections;
 using HelixSync;
 using System.Threading;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-    [TestFixture]
-    public class SyncCommandTest
+    public class SyncCommandTest : IDisposable
     {
         public DirectoryTester Decr1 = new DirectoryTester("Decr1", new Regex(@"\.helix.*"));
         public DirectoryTester Decr2 = new DirectoryTester("Decr2", new Regex(@"\.helix.*"));
         public DirectoryTester Encr1 = new DirectoryTester("Encr1");
         public DirectoryTester Encr2 = new DirectoryTester("Encr2");
 
-        [SetUp]
-        public void SetUp()
+        public SyncCommandTest() 
         {
             Decr1.Clear(true);
             Decr2.Clear(true);
             Encr1.Clear(true);
             Encr2.Clear(true);
-            Assert.IsFalse(Directory.Exists(Decr1.DirectoryPath));
-            Assert.IsFalse(Directory.Exists(Decr2.DirectoryPath));
-            Assert.IsFalse(Directory.Exists(Encr1.DirectoryPath));
-            Assert.IsFalse(Directory.Exists(Encr2.DirectoryPath));
+            Assert.False(Directory.Exists(Decr1.DirectoryPath));
+            Assert.False(Directory.Exists(Decr2.DirectoryPath));
+            Assert.False(Directory.Exists(Encr1.DirectoryPath));
+            Assert.False(Directory.Exists(Encr2.DirectoryPath));
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose() 
         {
             Decr1.Dispose();
             Decr2.Dispose();
@@ -85,19 +82,19 @@ namespace HelixSync.NUnit
             SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
         }
 
-        [Test]
+        [Fact]
         public void SyncCommand_SimpleSync()
         {
             Decr1.UpdateTo("file1.txt < aa");
             SyncDecr1andEncr1();
             SyncDecr2andEncr1();
-            Assert.IsTrue(Decr2.EqualTo("file1.txt < aa"));
+            Assert.True(Decr2.EqualTo("file1.txt < aa"));
 
             Decr1.UpdateTo("file1.txt < aa",
                            "file2.txt < bb");
         }
         
-        [Test]
+        [Fact]
         public void SyncCommand_DeleteThenReAdd()
         {
             Decr1.UpdateTo("file1.txt < aa");
@@ -113,28 +110,28 @@ namespace HelixSync.NUnit
             SyncDecr1andEncr1();
             SyncDecr2andEncr1();
 
-            Assert.IsTrue(Decr2.EqualTo("file1.txt < abc"));
+            Assert.True(Decr2.EqualTo("file1.txt < abc"));
         }
 
-        [Test]
+        [Fact]
         public void SyncCommand_ChangeCaseOnly()
         {
             for (int i = 0; i < 10; i++)
             {
                 Decr1.UpdateTo("A < xyz");
-                SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
-                SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
+                SyncDecr1andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.DecryptedSide));
+                SyncDecr2andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.EncryptedSide));
                 Decr1.AssertEqual(new string[] { "A < xyz" });
                 Decr2.AssertEqual(new string[] { "A < xyz" });
 
                 Decr1.UpdateTo("a");
-                SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
-                SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
+                SyncDecr1andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.DecryptedSide));
+                SyncDecr2andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.EncryptedSide));
                 Decr1.AssertEqual(new string[] { "a" });
                 Decr2.AssertEqual(new string[] { "a" });
             }
 
-            Assert.Fail("Sometimes works sometimes fails depending if th delete comes before the add");
+            Assert.True(false, "Sometimes works sometimes fails depending if th delete comes before the add");
         }
 
         static string[] choices = new string[]
@@ -200,9 +197,13 @@ namespace HelixSync.NUnit
 
         public void DirectoryAreEqual(DirectoryTester tester, string content, string message)
         {
-            Assert.AreEqual(new DirectoryTester.DirectoryEntryCollection(content).ToString(), 
-                            tester.GetContent().ToString(),
+            if (string.IsNullOrEmpty(message)) {
+                Assert.Equal(new DirectoryTester.DirectoryEntryCollection(content).ToString(), tester.GetContent().ToString());
+            }
+            else {
+                Assert.True(new DirectoryTester.DirectoryEntryCollection(content).ToString() == tester.GetContent().ToString(),
                             message);
+            }
         }
 
     }

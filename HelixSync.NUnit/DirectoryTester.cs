@@ -1,7 +1,6 @@
 ﻿// This file is part of HelixSync, which is released under GPL-3.0 see
 // the included LICENSE file for full details
 
-using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
@@ -202,7 +202,7 @@ namespace HelixSync.NUnit
             var directoryContent = GetContent();
 
             if (shouldBeContent.ToString() != directoryContent.ToString())
-                Assert.Fail(message);
+                Assert.True(false, message);
         }
 
         public DirectoryTester(string path, Regex excludedItems = null, bool cleanupOnDispose = true)

@@ -8,24 +8,28 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
-using HelixSync.NUnit;
 using System.Reflection;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-    [TestFixture]
-    public class DirectoryPairTests
+    public class DirectoryPairTests : IDisposable
     {
         //FAT > 2000 (to accomidate time stamp presision
         //NFTS > 10 
         const int timeStampPrecision = 2000;
 
-        [SetUp]
-        [TearDown]
+        public DirectoryPairTests(){
+            ResetDirectory();
+        }
+
+        public void Dispose(){
+            ResetDirectory();
+        }
+
         public void ResetDirectory()
         {
-            System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(typeof(AssemblySetup).GetTypeInfo().Assembly.Location));
+            System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location));
             if (Directory.Exists("1-Orig"))
                 Directory.Delete("1-Orig", true);
             if (Directory.Exists("2-Encr"))
@@ -38,7 +42,7 @@ namespace HelixSync.NUnit
             if (Directory.Exists("Encr")) Directory.Delete("Encr", true);
         }
 
-        [Test]
+        [Fact]
         public void DirectoryPair_DecrToEncr()
         {
             if (Directory.Exists("Orig")) Directory.Delete("Orig", true);
@@ -55,51 +59,51 @@ namespace HelixSync.NUnit
             using (var encrToDecr = DirectoryPair.Open("Encr", "Decr", DerivedBytesProvider.FromPassword("password"), true, HelixFileVersion.UnitTest))
             {
                 var changes = origToEncr.FindChanges();
-                Assert.AreEqual(1, changes.Count);
-                Assert.AreEqual("test.txt", changes[0].DecrFileName);
+                Assert.Equal(1, changes.Count);
+                Assert.Equal("test.txt", changes[0].DecrFileName);
 
-                Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
 
-                Assert.AreEqual(0, origToEncr.FindChanges().Count, "Single file sync still contains changes");
+                Assert.True(0 == origToEncr.FindChanges().Count, "Single file sync still contains changes");
 
                 //New (Encr => Decr)
                 changes = encrToDecr.FindChanges();
-                Assert.AreEqual(1, changes.Count);
-                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
-                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
+                Assert.Equal(1, changes.Count);
+                Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
-                Assert.AreEqual(0, encrToDecr.FindChanges().Count);
+                Assert.Equal(0, encrToDecr.FindChanges().Count);
 
-                Assert.AreEqual(HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Orig/test.txt"))), HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Decr/test.txt"))));
-                Assert.AreEqual("hello world", File.ReadAllText(Path.Combine("Decr", "test.txt")));
+                Assert.Equal(HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Orig/test.txt"))), HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Decr/test.txt"))));
+                Assert.Equal("hello world", File.ReadAllText(Path.Combine("Decr", "test.txt")));
 
 
                 //Add (Orig => Encr)
                 Util.WriteTextFile("Orig/test2.txt", "aa");
                 changes = origToEncr.FindChanges();
-                Assert.AreEqual(1, changes.Count);
-                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.DecryptedSide);
-                Assert.AreEqual("test2.txt", changes[0].DecrFileName);
+                Assert.Equal(1, changes.Count);
+                Assert.True(changes[0].SyncMode == PreSyncMode.DecryptedSide);
+                Assert.Equal("test2.txt", changes[0].DecrFileName);
 
-                Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
 
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
                 //Add (Encr => Decr)
                 changes = encrToDecr.FindChanges();
-                Assert.AreEqual(1, changes.Count);
-                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
-                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
+                Assert.Equal(1, changes.Count);
+                Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
-                Assert.AreEqual(0, encrToDecr.FindChanges().Count);
+                Assert.Equal(0, encrToDecr.FindChanges().Count);
 
-                Assert.AreEqual(HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Orig/test2.txt"))),
+                Assert.Equal(HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Orig/test2.txt"))),
                                 HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path(@"Decr/test2.txt"))));
-                Assert.AreEqual("aa", File.ReadAllText(Util.Path("Decr/test2.txt")));
+                Assert.Equal("aa", File.ReadAllText(Util.Path("Decr/test2.txt")));
 
 
 
@@ -109,54 +113,54 @@ namespace HelixSync.NUnit
 
                 Util.WriteTextFile("Orig/test.txt", "hello world2");
                 changes = origToEncr.FindChanges();
-                Assert.AreEqual(1, changes.Count);
-                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.DecryptedSide);
-                Assert.AreEqual("test.txt", changes[0].DecrFileName);
+                Assert.Equal(1, changes.Count);
+                Assert.True(changes[0].SyncMode == PreSyncMode.DecryptedSide);
+                Assert.Equal("test.txt", changes[0].DecrFileName);
 
-                Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
 
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
                 //Update (Encr => Decr)
                 changes = encrToDecr.FindChanges();
-                Assert.AreEqual(1, changes.Count);
-                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
-                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
+                Assert.Equal(1, changes.Count);
+                Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
-                Assert.AreEqual(0, encrToDecr.FindChanges().Count);
-                Assert.AreEqual(
+                Assert.Equal(0, encrToDecr.FindChanges().Count);
+                Assert.Equal(
                     HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Orig/test.txt"))),
                     HelixUtil.TruncateTicks(File.GetLastWriteTimeUtc(Util.Path("Decr/test.txt"))));
 
 
 
-                Assert.AreEqual("hello world2", File.ReadAllText(Util.Path("Decr/test.txt")));
+                Assert.Equal("hello world2", File.ReadAllText(Util.Path("Decr/test.txt")));
 
                 //System.Threading.Thread.Sleep(timeStampPrecision); //ensure the timestap changes
 
                 //Delete (Orig => Encr)
                 File.Delete(Util.Path("Orig/test.txt"));
                 changes = origToEncr.FindChanges();
-                Assert.AreEqual(1, changes.Count);
-                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.DecryptedSide);
-                Assert.AreEqual("test.txt", changes[0].DecrFileName);
+                Assert.Equal(1, changes.Count);
+                Assert.True(changes[0].SyncMode == PreSyncMode.DecryptedSide);
+                Assert.Equal("test.txt", changes[0].DecrFileName);
 
-                Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]));
-                Assert.IsTrue(origToEncr.DecrDirectory.SyncLog.FindByDecrFileName("test.txt").EntryType == FileEntryType.Removed);
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.True(origToEncr.DecrDirectory.SyncLog.FindByDecrFileName("test.txt").EntryType == FileEntryType.Removed);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
 
                 //Delete (Encr => Decr)
                 changes = encrToDecr.FindChanges();
-                Assert.AreEqual(1, changes.Count, "Delete change did not propigate correctly");
-                Assert.IsTrue(changes[0].SyncMode == PreSyncMode.EncryptedSide);
-                Assert.IsTrue(changes[0].EncrFileName.EndsWith(".hx"));
+                Assert.True(1 == changes.Count, "Delete change did not propigate correctly");
+                Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
+                Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.AreEqual(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
 
-                Assert.IsFalse(File.Exists(Util.Path("Decr/test.txt")), "Missing file Decr/test.txt");
+                Assert.False(File.Exists(Util.Path("Decr/test.txt")), "Missing file Decr/test.txt");
             }
         }
 
@@ -205,7 +209,7 @@ namespace HelixSync.NUnit
         }
 #endif
 
-        [Test]
+        [Fact]
         public void DirectoryPair_RenameCaseOnly()
         {
             string password = "password";
@@ -217,12 +221,12 @@ namespace HelixSync.NUnit
             {
                 //Orig => Encr
                 origToEncr.SyncChanges();
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
 
                 //Encr => Decr
                 encrToDecr.SyncChanges();
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
             }
 
             System.Threading.Thread.Sleep(timeStampPrecision);
@@ -234,22 +238,22 @@ namespace HelixSync.NUnit
             using (var encrToDecr = DirectoryPair.Open("2-Encr", "3-Decr", DerivedBytesProvider.FromPassword(password), true, HelixFileVersion.UnitTest))
             {
                 //Orig => Encr
-                Assert.AreEqual(2, origToEncr.FindChanges().Count); //delete + create
+                Assert.Equal(2, origToEncr.FindChanges().Count); //delete + create
                 origToEncr.SyncChanges();
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
                 //Encr => Decr
-                Assert.AreEqual(2, encrToDecr.FindChanges().Count); //delete + create
-                Assert.That(encrToDecr.FindChanges().All(e => e.SyncMode == PreSyncMode.EncryptedSide));
+                Assert.Equal(2, encrToDecr.FindChanges().Count); //delete + create
+                Assert.True(encrToDecr.FindChanges().All(e => e.SyncMode == PreSyncMode.EncryptedSide));
                 encrToDecr.SyncChanges();
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
-                Assert.AreEqual("FILE.txt", (new DirectoryInfo(@"1-Orig")).GetFileSystemInfos("*.txt").First().Name);
+                Assert.Equal("FILE.txt", (new DirectoryInfo(@"1-Orig")).GetFileSystemInfos("*.txt").First().Name);
             }
         }
 
 
-        [Test]
+        [Fact]
         public void DirectoryPair_NestedFolders()
         {
             ResetDirectory();
@@ -263,17 +267,17 @@ namespace HelixSync.NUnit
 
                 //Orig => Encr
                 origToEncr.SyncChanges();
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
 
                 //Encr => Decr
                 encrToDecr.SyncChanges();
-                Assert.AreEqual(0, origToEncr.FindChanges().Count);
+                Assert.Equal(0, origToEncr.FindChanges().Count);
 
 
                 //Verifies nested folders
-                Assert.IsTrue(Directory.Exists(Util.Path("3-Decr/Nested/Directory")), "Directory Exists: 3-Decr/Nested/Directory");
-                Assert.IsTrue(File.Exists(Util.Path("3-Decr/Nested/File.txt")), "File Exists: 3-Decr/Nested/File.txt");
+                Assert.True(Directory.Exists(Util.Path("3-Decr/Nested/Directory")), "Directory Exists: 3-Decr/Nested/Directory");
+                Assert.True(File.Exists(Util.Path("3-Decr/Nested/File.txt")), "File Exists: 3-Decr/Nested/File.txt");
             }
             ResetDirectory();
         }

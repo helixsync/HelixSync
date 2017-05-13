@@ -8,20 +8,20 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-    [TestFixture]
+
     public class HelixUtilTests
     {
-        [Test]
+        [Fact]
         public void HelixUtil_RemoveRootFromPath()
         {
-            Assert.AreEqual(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), @"c:"));
-            Assert.AreEqual(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), Util.Path(@"c:\")));
-            Assert.AreEqual(Util.Path(@"aa\bb"), HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @""));
-            Assert.AreEqual(@"bb", HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @"aa"));
+            Assert.Equal(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), @"c:"));
+            Assert.Equal(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), Util.Path(@"c:\")));
+            Assert.Equal(Util.Path(@"aa\bb"), HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @""));
+            Assert.Equal(@"bb", HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @"aa"));
         }
 
 #if FSCHECK

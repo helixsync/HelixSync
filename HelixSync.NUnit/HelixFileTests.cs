@@ -11,11 +11,10 @@ using System.Threading.Tasks;
 #if FSCHECK
 using FsCheck;
 #endif
-using NUnit.Framework;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-    [TestFixture]
     public class HelixFileTests
     {
         public static void Delete(params string[] files)
@@ -28,17 +27,17 @@ namespace HelixSync.NUnit
         }
 
 
-        [Test]
+        [Fact]
         public void HelixFile_EncryptDecrypt()
         {
             if (File.Exists("encr1.hx")) File.Delete("encr1.hx");
             File.WriteAllText("original1.txt", "hello world");
             HelixFile.Encrypt("original1.txt", "encr1.hx", "password", new FileEncryptOptions { FileVersion = HelixFileVersion.UnitTest });
             HelixFile.Decrypt("encr1.hx", "decrypted1.txt", "password");
-            Assert.AreEqual("hello world", File.ReadAllText("decrypted1.txt"));
+            Assert.Equal("hello world", File.ReadAllText("decrypted1.txt"));
         }
 
-        [Test]
+        [Fact]
         public void HelixFile_IllegalFileNameChar()
         {
             //Delete("original1.txt", "encr1.hx", "decrypted1.txt");
@@ -57,7 +56,7 @@ namespace HelixSync.NUnit
             try
             {
                 HelixFile.Decrypt("encr1.hx", "decrypted1.txt", "password");
-                Assert.Fail("Failed to detect file name curruption");
+                Assert.True(false, "Failed to detect file name curruption");
             }
             catch (HeaderCorruptionException) { }
         }
@@ -75,13 +74,13 @@ namespace HelixSync.NUnit
                  File.WriteAllText("temp.txt", inp ?? "");
                  HelixFile.Encrypt("temp.txt", "temp.hx", DerivedBytesProvider.FromPassword(pass ?? ""), new FileEncryptOptions { FileVersion = HelixFileVersion.UnitTest });
                  HelixFile.Decrypt("temp.hx", "temp.decr", pass ?? "");
-                 Assert.AreEqual(inp ?? "", File.ReadAllText("temp.decr"));
+                 Assert.Equal(inp ?? "", File.ReadAllText("temp.decr"));
              }).QuickCheckThrowOnFailure();
         }
 #endif
 
 #if FSCHECK
-        [Test]
+        [Fact]
         public void HelixFile_RandomCurruption()
         {
 
@@ -92,7 +91,7 @@ namespace HelixSync.NUnit
         }
 #endif
 
-        [Test]
+        [Fact]
         public void HelixFile_RandomCurruption_KnownIssues()
         {
             TestRandomCurruption("H", 5, 149);
@@ -127,13 +126,13 @@ namespace HelixSync.NUnit
             {
 
             }
-            Assert.IsFalse(File.Exists("temp.decr"), "File temp.decr expected to have been deleted however has not");
+            Assert.False(File.Exists("temp.decr"), "File temp.decr expected to have been deleted however has not");
             Delete("temp.txt", "temp.decr", "temp.hx");
             return adj;
         }
 
 
-        [Test]
+        [Fact]
         public void HelixFile_LargerFile()
         {
             byte[] b = new byte[50000];
@@ -147,12 +146,12 @@ namespace HelixSync.NUnit
             HelixFile.Encrypt(file1, encrFile, "password", new FileEncryptOptions { FileVersion = HelixFileVersion.UnitTest });
             HelixFile.Decrypt(encrFile, file2, "password");
             byte[] b2 = File.ReadAllBytes(file2);
-            Assert.IsTrue(Util.BytesEqual(b, b2));
+            Assert.True(Util.BytesEqual(b, b2));
 
             Delete(file1, encrFile, file2);
         }
 
-        [Test]
+        [Fact]
         public void HelixFile_LargerFileTruncate()
         {
             byte[] b = new byte[50000];
@@ -167,7 +166,7 @@ namespace HelixSync.NUnit
 
             //Truncates File by 10 bytes
             byte[] encryptBytes = File.ReadAllBytes(encrFile);
-            Assert.IsTrue(encryptBytes.Length > 50000);
+            Assert.True(encryptBytes.Length > 50000);
             Delete(encrFile);
             Array.Resize(ref encryptBytes, encryptBytes.Length - 10);
             File.WriteAllBytes(encrFile, encryptBytes);
@@ -176,14 +175,14 @@ namespace HelixSync.NUnit
             try
             {
                 HelixFile.Decrypt(encrFile, file2, "password");
-                Assert.Fail("Expected FileCurruptionException");
+                Assert.True(false, "Expected FileCurruptionException");
             }
             catch(FileCorruptionException)
             {
 
             }
 
-            Assert.IsFalse(File.Exists(file2));
+            Assert.False(File.Exists(file2));
 
             Delete(file1, encrFile, file2);
         }

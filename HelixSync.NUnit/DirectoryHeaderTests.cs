@@ -8,22 +8,29 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using System.Reflection;
+using Xunit;
 
 namespace HelixSync.NUnit
 {
-	[TestFixture]
-    public class DirectoryHeaderTests
+    public class DirectoryHeaderTests : IDisposable
     {
-        [SetUp]
-        [TearDown]
-        public void ResetDirectory()
+        public DirectoryHeaderTests ()
         {
-            System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(typeof(AssemblySetup).GetTypeInfo().Assembly.Location));
+            ResetDirectory();
+        }
+        public void Dispose() 
+        {
+            ResetDirectory();
         }
 
-        [Test]
+
+        public void ResetDirectory()
+        {
+            System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location));
+        }
+
+        [Fact]
         public void DirectoryHeader_NewSaveLoad()
         {
             var newHeader = DirectoryHeader.New();
@@ -34,14 +41,14 @@ namespace HelixSync.NUnit
 
             var loadHeader = DirectoryHeader.Load("header.hx", DerivedBytesProvider.FromPassword("password"));
 
-            //Assert.AreEqual(newHeader.DerivedBytesProvider.GetDerivedBytes().Key.ToHex(), loadHeader.DerivedBytesProvider.Key.ToHex());
-            //Assert.AreEqual(newHeader.DerivedBytesProvider.GetDerivedBytes().Salt.ToHex(), loadHeader.DerivedBytesProvider.Salt.ToHex());
-            Assert.AreEqual(newHeader.FileNameKey.ToHex(), loadHeader.FileNameKey.ToHex());
-            Assert.AreEqual(newHeader.DirectoryId, loadHeader.DirectoryId);
+            //Assert.Equal(newHeader.DerivedBytesProvider.GetDerivedBytes().Key.ToHex(), loadHeader.DerivedBytesProvider.Key.ToHex());
+            //Assert.Equal(newHeader.DerivedBytesProvider.GetDerivedBytes().Salt.ToHex(), loadHeader.DerivedBytesProvider.Salt.ToHex());
+            Assert.Equal(newHeader.FileNameKey.ToHex(), loadHeader.FileNameKey.ToHex());
+            Assert.Equal(newHeader.DirectoryId, loadHeader.DirectoryId);
             File.Delete("header.hx");
         }
 
-        [Test]
+        [Fact]
         public void DirectoryHeader_ThrowsExceptionWhenLoading()
         {
             var newHeader = DirectoryHeader.New();
@@ -52,7 +59,7 @@ namespace HelixSync.NUnit
             try
             {
                 DirectoryHeader.Load("header.hx", DerivedBytesProvider.FromPassword("password"));
-                Assert.Fail("Did not detect curruption");
+                Assert.True(false, "Did not detect curruption");
             }
             catch (HelixException)
             {
