@@ -24,6 +24,43 @@ namespace HelixSync.Test
             Assert.Equal(@"bb", HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @"aa"));
         }
 
+        [Fact]
+        public void HelixUtil_GetExactPathName()
+        {
+            
+            try
+            {
+                Util.Remove("AA");
+                Directory.CreateDirectory("AA");
+                Directory.CreateDirectory(@"AA\A1");
+                File.WriteAllText(@"AA\A1\A2", "xx");
+                File.WriteAllText(@"AA\AA", "aa");
+                File.WriteAllText(@"AA\ABCDEFGHIJKLMNOP", "Long File Name");
+                //todo: decide what to do with dos paths
+
+                {
+                    var exactPath = HelixUtil.GetExactPathName(@"aa\ABCDEF~1");
+                    Assert.Equal(@"AA\ABCDEFGHIJKLMNOP", exactPath);
+                }
+
+                {
+                    var exactPath = HelixUtil.GetExactPathName(@"aa\a1\a2");
+                    Assert.Equal(@"AA\A1\A2", exactPath);
+                }
+                {
+                    var exactPath = HelixUtil.GetExactPathName(@"aa\aa");
+                    Assert.Equal(@"AA\AA", exactPath);
+                }
+
+            }
+            finally
+            {
+                Util.Remove("AA");
+            }
+
+        }
+
+
 #if FSCHECK
         [FsCheck.NUnit.Property]
         public void HelixUtil_QuoteUnquote(string val)

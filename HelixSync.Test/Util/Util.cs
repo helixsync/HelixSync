@@ -65,6 +65,17 @@ namespace HelixSync.Test
             if (File.GetLastWriteTimeUtc(path) <= lastTime)
                 File.SetLastWriteTimeUtc(path, lastTime.AddSeconds(1));
         }
+
+        public static void Remove(params string[] paths)
+        {
+            foreach (var path in paths)
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+                if (Directory.Exists(path))
+                    Directory.Delete(path, true);
+            }
+        }
     }
 }
 

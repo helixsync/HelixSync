@@ -79,37 +79,41 @@ namespace HelixSync
         /// Returns the path with the correct caseing. Switches to a native path
         /// if needed.
         /// </summary>
-        public static string GetExactPathName(string path)
+        public static string GetExactPathName(string path, int maxDepth = int.MaxValue)
         {
+            if (string.IsNullOrEmpty(path))
+                return path;
+            if (maxDepth <= 0)
+                return path;
+
+            if (string.IsNullOrEmpty(path))
+                return "";
+
             if (!(File.Exists(path) || Directory.Exists(path)))
                 return path;
 
             var di = new DirectoryInfo(path);
 
+            
+            var properCaseName = di.Parent.GetFileSystemInfos(di.Name).FirstOrDefault();
 
-            if (di.Parent != null)
+            if (properCaseName == null)
             {
-                var properCaseName = di.Parent.GetFileSystemInfos(di.Name).FirstOrDefault();
-
-                if (properCaseName == null)
-                {
-                    //When using Linux with a cases insensitive file system Linux still does a case sensitive search
-                    //So we have to do a full search to make this work correctly
-                    properCaseName = di.Parent.GetFileSystemInfos()
-                        .Where(i => string.Equals(i.Name, di.Name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-                }
-
-                if (properCaseName == null)
-                    properCaseName = di;
-
-                return Path.Combine(
-                    GetExactPathName(di.Parent.FullName),
-                    properCaseName.Name);
+                //When using Linux with a cases insensitive file system Linux still does a case sensitive search
+                //So we have to do a full search to make this work correctly
+                properCaseName = di.Parent.GetFileSystemInfos()
+                    .Where(i => string.Equals(i.Name, di.Name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             }
-            else
-            {
-                return di.Name.ToUpper();
-            }
+
+            if (properCaseName == null)
+                properCaseName = di;
+
+            var childNodeName = properCaseName.Name;
+
+
+            return Path.Combine(
+                GetExactPathName(Path.GetDirectoryName(path), maxDepth -1),
+                childNodeName);
         }
 
         public static string RemoveRootFromPath(string path, string root)

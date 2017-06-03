@@ -58,6 +58,7 @@ namespace HelixSync.Test
                 PreSyncDetails preSync = o as PreSyncDetails;
                 if (preSync != null)
                     onPreSyncDetails?.Invoke(preSync);
+                System.Diagnostics.Debug.WriteLine(o);
             };
             SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
         }
@@ -77,6 +78,7 @@ namespace HelixSync.Test
                 PreSyncDetails preSync = o as PreSyncDetails;
                 if (preSync != null)
                     onPreSyncDetails?.Invoke(preSync);
+                System.Diagnostics.Debug.WriteLine(o);
             };
 
             SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);

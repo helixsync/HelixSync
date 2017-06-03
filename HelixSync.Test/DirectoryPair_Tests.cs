@@ -250,6 +250,8 @@ namespace HelixSync.Test
 
                 Assert.Equal("FILE.txt", (new DirectoryInfo(@"1-Orig")).GetFileSystemInfos("*.txt").First().Name);
             }
+
+            Assert.True(false, "Sometimes fails, sometimes works depending on the order (false until properly fixed)");
         }
 
 
