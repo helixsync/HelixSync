@@ -141,6 +141,10 @@ namespace HelixSync
             return preSyncDetails;
         }
 
+
+        /// <summary>
+        /// Returns a list of changes that need to be performed as part of the sync.
+        /// </summary>
         public List<PreSyncDetails> FindChanges()
         {
             var rng = RandomNumberGenerator.Create();
@@ -361,8 +365,6 @@ namespace HelixSync
 
             return new SyncLogEntry(decrEntry.EntryType, decrEntry.FileName, decrEntry.LastWriteTimeUtc, encrEntry.FileName, encrEntry.LastWriteTimeUtc);
         }
-
-
         public SyncLogEntry CreateNewLogEntryFromEncrPath(string encrFileName)
         {
             string encrFilePath = Path.Combine(EncrDirectoryPath, encrFileName);
@@ -393,6 +395,11 @@ namespace HelixSync
 
         public SyncStatus TrySync(PreSyncDetails entry)
         {
+            if (WhatIf)
+                throw new InvalidOperationException("Unable to perform sync when WhatIf mode is set to true");
+            if (entry == null)
+                throw new ArgumentNullException(nameof(entry));
+
             string message;
             bool retry;
             return TrySync(entry, out retry, out message);
@@ -400,7 +407,7 @@ namespace HelixSync
         public SyncStatus TrySync(PreSyncDetails entry, out bool retry, out string message)
         {
             if (WhatIf)
-                throw new NotSupportedException("Unable to perform sync when WhatIf mode is set to true");
+                throw new InvalidOperationException("Unable to perform sync when WhatIf mode is set to true");
             if (entry == null)
                 throw new ArgumentNullException(nameof(entry));
 
@@ -446,6 +453,10 @@ namespace HelixSync
                 string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.DecrFileName));
 
                 //todo: if file exists with different case - skip file
+                if (File.Exists(decrPath) && HelixUtil.GetExactPathName(decrPath) != decrPath)
+                {
+                    throw new HelixException("Case only conflict");
+                }
                 HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
                 //todo: get the date on the file system (needed if the filesystem has less percission
 

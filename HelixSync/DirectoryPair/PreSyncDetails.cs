@@ -61,8 +61,6 @@ namespace HelixSync
             builder.Append(DecrFileName ?? "");
             return builder.ToString();
         }
-
-
         
 
         /// <summary>

@@ -10,22 +10,33 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 using Xunit;
+using System.Text.RegularExpressions;
 
 namespace HelixSync.Test
 {
-    public class DirectoryPair_Tests : IDisposable
+    public class DirectoryPair_Tests : IntegratedDirectoryTester
     {
+
+
+        public DirectoryPair_Tests()
+        {
+            ResetDirectory();
+        }
+        
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                ResetDirectory();
+
+            base.Dispose(disposing);
+        }
+
+
         //FAT > 2000 (to accomidate time stamp presision
         //NFTS > 10 
         const int timeStampPrecision = 2000;
-
-        public DirectoryPair_Tests(){
-            ResetDirectory();
-        }
-
-        public void Dispose(){
-            ResetDirectory();
-        }
+        
 
         public void ResetDirectory()
         {
@@ -283,6 +294,10 @@ namespace HelixSync.Test
             }
             ResetDirectory();
         }
+
+
+
+
 
         //todo: test 2 encr to 1 decr
         //todo: test renaming a directory (with children) only by case
