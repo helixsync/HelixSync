@@ -1,6 +1,7 @@
 ﻿// This file is part of HelixSync, which is released under GPL-3.0 see
 // the included LICENSE file for full details
 
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,28 +10,8 @@ using System.Threading.Tasks;
 
 namespace HelixSync
 {
-    public class Logger
+    public class Logger : ILogger
     {
-        //Based of NLog log levels
-        //https://github.com/NLog/NLog/wiki/Configuration-file#log-levels
-        public enum LogLevel
-        {
-            Trace,
-            Debug,
-            Info,
-            Warn,
-            Error,
-            Fatal,
-        }
-
-        public class LogArgs : EventArgs
-        {
-            LogLevel level { get; set; }
-            string Message { get; set; }
-            object Context { get; set; }
-
-        }
-
         public void Log(LogLevel level, string message, object context = null)
         {
 
@@ -38,27 +19,42 @@ namespace HelixSync
 
         public void Trace(string message, object context = null)
         {
-            Log(LogLevel.Trace, message, context);
+            Log(LogLevel.Critical, new EventId(), message, null, (s, e) => s);
         }
         public void Debug(string message, object context = null)
         {
-            Log(LogLevel.Debug, message, context);
+            Log(LogLevel.Critical, new EventId(), message, null, (s, e) => s);
         }
-        public void Info(string message, object context = null)
+        public void Information(string message, object context = null)
         {
-            Log(LogLevel.Info, message, context);
+            Log(LogLevel.Critical, new EventId(), message, null, (s, e) => s);
         }
-        public void Warn(string message, object context = null)
+        public void Warning(string message, object context = null)
         {
-            Log(LogLevel.Warn, message, context);
+            Log(LogLevel.Critical, new EventId(), message, null, (s, e) => s);
         }
         public void Error(string message, object context = null)
         {
-            Log(LogLevel.Error, message, context);
+            Log(LogLevel.Critical, new EventId(), message, null, (s, e) => s);
         }
-        public void Fatal(string message, object context = null)
+        public void Critical(string message)
         {
-            Log(LogLevel.Fatal, message, context);
+            Log(LogLevel.Critical, new EventId(), message, null, (s, e) => s);
+        }
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+            //todo: write to console?
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public IDisposable BeginScope<TState>(TState state)
+        {
+            return null;
         }
     }
 }
