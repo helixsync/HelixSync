@@ -1,5 +1,5 @@
-﻿// This file is part of HelixSync, which is released under GPL-3.0 see
-// the included LICENSE file for full details
+﻿// This file is part of HelixSync, which is released under GPL-3.0
+// see the included LICENSE file for full details
 
 using System;
 using System.Collections.Generic;
@@ -172,18 +172,21 @@ namespace HelixSync
                 .ToList();
         }
 
-        private void RefreshPreSyncEncrHeader(PreSyncDetails match)
+        private void RefreshPreSyncEncrHeader(PreSyncDetails preSyncDetails)
         {
-            string encryFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(match.EncrInfo.FileName));
+            if (preSyncDetails == null)
+                throw new ArgumentNullException(nameof(preSyncDetails));
+
+            string encryFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(preSyncDetails.EncrInfo.FileName));
             if (File.Exists(encryFullPath))
             {
-                match.EncrHeader = HelixFile.DecryptHeader(encryFullPath, EncrDirectory.DerivedBytesProvider);
+                preSyncDetails.EncrHeader = HelixFile.DecryptHeader(encryFullPath, EncrDirectory.DerivedBytesProvider);
 
                 //Updates the DecrFileName (if neccessary)
-                if (string.IsNullOrEmpty(match.DecrFileName)
-                    && EncrDirectory.FileNameEncoder.EncodeName(match.EncrHeader.FileName) == match.EncrInfo.FileName)
+                if (string.IsNullOrEmpty(preSyncDetails.DecrFileName)
+                    && EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.EncrHeader.FileName) == preSyncDetails.EncrInfo.FileName)
                 {
-                    match.DecrFileName = match.EncrHeader.FileName;
+                    preSyncDetails.DecrFileName = preSyncDetails.EncrHeader.FileName;
                 }
             }
         }
@@ -393,26 +396,12 @@ namespace HelixSync
 
         public const int encrTimespanPrecisionMS = 1000;
 
-        public SyncStatus TrySync(PreSyncDetails entry)
+        public SyncResults TrySync(PreSyncDetails entry)
         {
             if (WhatIf)
                 throw new InvalidOperationException("Unable to perform sync when WhatIf mode is set to true");
             if (entry == null)
                 throw new ArgumentNullException(nameof(entry));
-
-            string message;
-            bool retry;
-            return TrySync(entry, out retry, out message);
-        }
-        public SyncStatus TrySync(PreSyncDetails entry, out bool retry, out string message)
-        {
-            if (WhatIf)
-                throw new InvalidOperationException("Unable to perform sync when WhatIf mode is set to true");
-            if (entry == null)
-                throw new ArgumentNullException(nameof(entry));
-
-            message = null;
-            retry = false;
 
             var SyncLog = DecrDirectory.SyncLog;
             if (entry.SyncMode == PreSyncMode.DecryptedSide)
@@ -420,7 +409,7 @@ namespace HelixSync
                 SyncLogEntry logEntry = entry.LogEntry;
                 SyncLogEntry fileSystemEntry = CreateNewLogEntryFromDecrPath(entry.DecrFileName);
                 if (logEntry?.ToString() == fileSystemEntry?.ToString())
-                    return SyncStatus.Skipped; //Unchanged
+                    return SyncResults.Skipped(); //Unchanged
 
                 
                 string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(entry.EncrFileName));
@@ -437,14 +426,14 @@ namespace HelixSync
                 }
 
                 SyncLog.Add(CreateEntryFromHeader(header, FileEntry.FromFile(encrPath, EncrDirectory.DirectoryPath)));
-                return SyncStatus.Success;
+                return SyncResults.Success();
             }
             else if (entry.SyncMode == PreSyncMode.EncryptedSide)
             {
                 SyncLogEntry logEntry = entry.LogEntry;
                 SyncLogEntry fileSystemEntry = CreateNewLogEntryFromEncrPath(entry.EncrFileName);
                 if (logEntry?.ToString() == fileSystemEntry?.ToString())
-                    return SyncStatus.Skipped; //Unchanged
+                    return SyncResults.Success(); //Unchanged
 
                 //todo: test to see if there are illegal characters
                 //todo: check if the name matches
@@ -453,18 +442,20 @@ namespace HelixSync
                 string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.DecrFileName));
 
                 //todo: if file exists with different case - skip file
+                var exactPath = HelixUtil.GetExactPathName(decrPath);
                 if (File.Exists(decrPath) && HelixUtil.GetExactPathName(decrPath) != decrPath)
                 {
-                    throw new HelixException("Case only conflict");
+                    //todo: throw more specific exception
+                    return SyncResults.Failure(new HelixException($"Case only conflict file \"{decrPath}\" exists as \"{exactPath}\"."));
                 }
                 HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
                 //todo: get the date on the file system (needed if the filesystem has less percission
 
                 SyncLog.Add(fileSystemEntry);
-                return SyncStatus.Success;
+                return SyncResults.Success();
             }
 
-            return SyncStatus.Failure;
+            return SyncResults.Failure(new HelixException($"Invalid sync mode {entry.SyncMode}"));
         }
 
 

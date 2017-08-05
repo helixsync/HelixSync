@@ -16,7 +16,8 @@ namespace HelixSync
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
                 throw new ArgumentNullException(nameof(directoryPath));
-            this.DirectoryPath = directoryPath;
+
+            this.DirectoryPath = HelixUtil.PathNative(directoryPath);
         }
 
         public FileNameEncoder FileNameEncoder { get; private set; }

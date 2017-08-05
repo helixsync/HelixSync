@@ -73,7 +73,7 @@ namespace HelixSync.Test
                 Assert.Equal(1, changes.Count);
                 Assert.Equal("test.txt", changes[0].DecrFileName);
 
-                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]).SyncStatus);
 
                 Assert.True(0 == origToEncr.FindChanges().Count, "Single file sync still contains changes");
 
@@ -83,7 +83,7 @@ namespace HelixSync.Test
                 Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
                 Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]).SyncStatus);
 
                 Assert.Equal(0, encrToDecr.FindChanges().Count);
 
@@ -98,7 +98,7 @@ namespace HelixSync.Test
                 Assert.True(changes[0].SyncMode == PreSyncMode.DecryptedSide);
                 Assert.Equal("test2.txt", changes[0].DecrFileName);
 
-                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]).SyncStatus);
 
                 Assert.Equal(0, origToEncr.FindChanges().Count);
 
@@ -108,7 +108,7 @@ namespace HelixSync.Test
                 Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
                 Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]).SyncStatus);
 
                 Assert.Equal(0, encrToDecr.FindChanges().Count);
 
@@ -128,7 +128,7 @@ namespace HelixSync.Test
                 Assert.True(changes[0].SyncMode == PreSyncMode.DecryptedSide);
                 Assert.Equal("test.txt", changes[0].DecrFileName);
 
-                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]).SyncStatus);
 
                 Assert.Equal(0, origToEncr.FindChanges().Count);
 
@@ -138,7 +138,7 @@ namespace HelixSync.Test
                 Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
                 Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]).SyncStatus);
 
                 Assert.Equal(0, encrToDecr.FindChanges().Count);
                 Assert.Equal(
@@ -158,7 +158,7 @@ namespace HelixSync.Test
                 Assert.True(changes[0].SyncMode == PreSyncMode.DecryptedSide);
                 Assert.Equal("test.txt", changes[0].DecrFileName);
 
-                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, origToEncr.TrySync(changes[0]).SyncStatus);
                 Assert.True(origToEncr.DecrDirectory.SyncLog.FindByDecrFileName("test.txt").EntryType == FileEntryType.Removed);
                 Assert.Equal(0, origToEncr.FindChanges().Count);
 
@@ -169,7 +169,7 @@ namespace HelixSync.Test
                 Assert.True(changes[0].SyncMode == PreSyncMode.EncryptedSide);
                 Assert.True(changes[0].EncrFileName.EndsWith(".hx"));
 
-                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]));
+                Assert.Equal(SyncStatus.Success, encrToDecr.TrySync(changes[0]).SyncStatus);
 
                 Assert.False(File.Exists(Util.Path("Decr/test.txt")), "Missing file Decr/test.txt");
             }

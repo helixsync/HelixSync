@@ -150,13 +150,12 @@ namespace HelixSync
                     {
                         pair.RefreshPreSyncDetails(change);
                         consoleEx.WriteLine(change);
-                        string message;
-                        bool retry;
+
                         if (!options.WhatIf)
                         {
-                            pair.TrySync(change, out retry, out message);
-                            if (!string.IsNullOrEmpty(message))
-                                consoleEx.WriteLine("..." + message);
+                            var syncResult = pair.TrySync(change);
+                            if (syncResult.Exception != null)
+                                consoleEx.WriteLine("..." + syncResult.Exception.Message);
                         }
                     }
                 }

@@ -219,7 +219,7 @@ namespace HelixSync.Test
         public void UpdateTo(params string[] content)
         {
             DirectoryEntryCollection directoryEntries = new DirectoryEntryCollection(content);
-
+            
             Directory.CreateDirectory(DirectoryPath);
 
             Clear(false);
@@ -260,6 +260,9 @@ namespace HelixSync.Test
         public DirectoryEntryCollection GetContent()
         {
             List<DirectoryEntry> entries = new List<DirectoryEntry>();
+
+            if (!Directory.Exists(DirectoryPath))
+                return new DirectoryEntryCollection("");
 
             var dirInfo = new DirectoryInfo(DirectoryPath);
             foreach (FileSystemInfo entry in dirInfo.GetFileSystemInfos("*", SearchOption.AllDirectories))

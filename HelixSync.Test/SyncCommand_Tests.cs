@@ -18,10 +18,12 @@ namespace HelixSync.Test
 {
     public class SyncCommand_Tests : IDisposable
     {
-        public DirectoryTester Decr1 = new DirectoryTester("Decr1", new Regex(@"\.helix.*"));
-        public DirectoryTester Decr2 = new DirectoryTester("Decr2", new Regex(@"\.helix.*"));
-        public DirectoryTester Encr1 = new DirectoryTester("Encr1");
-        public DirectoryTester Encr2 = new DirectoryTester("Encr2");
+        public const string BaseDir = "1261";
+
+        public DirectoryTester Decr1 = new DirectoryTester($"{BaseDir}/Decr1", new Regex(@"\.helix.*"));
+        public DirectoryTester Decr2 = new DirectoryTester($"{BaseDir}/Decr2", new Regex(@"\.helix.*"));
+        public DirectoryTester Encr1 = new DirectoryTester($"{BaseDir}/Encr1");
+        public DirectoryTester Encr2 = new DirectoryTester($"{BaseDir}/Encr2");
 
         public SyncCommand_Tests() 
         {
@@ -47,8 +49,8 @@ namespace HelixSync.Test
         {
             SyncOptions options = new SyncOptions
             {
-                DecrDirectory = "Decr1",
-                EncrDirectory = "Encr1",
+                DecrDirectory = Decr1.DirectoryPath,
+                EncrDirectory = Encr1.DirectoryPath,
                 Password = "secret",
                 Initialize = true
             };
@@ -67,8 +69,8 @@ namespace HelixSync.Test
         {
             SyncOptions options = new SyncOptions
             {
-                DecrDirectory = "Decr2",
-                EncrDirectory = "Encr1",
+                DecrDirectory = Decr2.DirectoryPath,
+                EncrDirectory = Encr1.DirectoryPath,
                 Password = "secret",
                 Initialize = true
             };
@@ -94,6 +96,11 @@ namespace HelixSync.Test
 
             Decr1.UpdateTo("file1.txt < aa",
                            "file2.txt < bb");
+
+            SyncDecr1andEncr1();
+            SyncDecr2andEncr1();
+            Assert.True(Decr2.EqualTo("file1.txt < aa",
+                           "file2.txt < bb"));
         }
         
         [Fact]

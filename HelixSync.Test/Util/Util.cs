@@ -22,10 +22,10 @@ namespace HelixSync.Test
             foreach (var change in pair.FindChanges())
             {
                 Console.WriteLine(change);
-                string message;
-                bool retry;
-                if (pair.TrySync(change, out retry, out message) != SyncStatus.Success)
-                    throw new Exception(message);
+
+                var syncResult = pair.TrySync(change);
+                if (syncResult.SyncStatus != SyncStatus.Success)
+                    throw syncResult.Exception;
             }
         }
 

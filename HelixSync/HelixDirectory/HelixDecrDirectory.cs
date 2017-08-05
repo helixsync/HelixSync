@@ -16,8 +16,8 @@ namespace HelixSync
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
                 throw new ArgumentNullException(nameof(directoryPath));
-            
-            this.DirectoryPath = directoryPath;
+
+            this.DirectoryPath = HelixUtil.PathNative(directoryPath);
             this.EncrDirectoryId = encrDirectoryId;
         }
 
