@@ -219,5 +219,32 @@ namespace HelixSync
                 return m.Value.Substring(1);
             });
         }
+
+
+        /// <summary>
+        /// Formats a size to ensure that it can fit in 5 characters.
+        /// It will adjusting the decimal percision as necessary.
+        /// </summary>
+        public static string FormatBytes5(long bytes)
+        {
+            if (bytes < 0)
+                throw new ArgumentOutOfRangeException(nameof(bytes), nameof(bytes) + " must be greater than or equal to 0");
+
+            string[] units = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
+            double dblSByte = bytes;
+            foreach (string unit in units)
+            {
+                if (dblSByte < 1000 && unit == "B") //Byte should never show a decimal
+                    return string.Format("{0,3:0}{1,-2}", dblSByte, unit);
+                else if (dblSByte < 10)
+                    return string.Format("{0,3:0.0}{1,-2}", dblSByte, unit);
+                else if (dblSByte >= 10 && dblSByte <= 1000)
+                    return string.Format("{0,3:0}{1,-2}", dblSByte, unit);
+
+                dblSByte = dblSByte / 1024.0;
+            }
+
+            return "MAX  ";
+        }
     }
 }

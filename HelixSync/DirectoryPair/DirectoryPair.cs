@@ -126,7 +126,7 @@ namespace HelixSync
                 if (entry.Item2 == null)
                 {
                     //New Entry (not in log or decrypted file)
-                    preSyncDetails.Add(new HelixSync.PreSyncDetails { EncrInfo = entry.Item1, EncrFileName = entry.Item1.FileName });
+                    preSyncDetails.Add(new PreSyncDetails { EncrInfo = entry.Item1, EncrFileName = entry.Item1.FileName });
                 }
                 else
                 {
@@ -334,7 +334,7 @@ namespace HelixSync
         /// <summary>
         /// Refreshes the contents of the preSyncDetails using the file system (in case the file system has changed since last retrieved)
         /// </summary>
-        internal void RefreshPreSyncDetails(PreSyncDetails preSyncDetails)
+        public void RefreshPreSyncDetails(PreSyncDetails preSyncDetails)
         {
             if (preSyncDetails == null)
                 throw new ArgumentNullException(nameof(preSyncDetails));

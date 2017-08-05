@@ -1,5 +1,5 @@
-﻿// This file is part of HelixSync, which is released under GPL-3.0 see
-// the included LICENSE file for full details
+﻿// This file is part of HelixSync, which is released under GPL-3.0
+// see the included LICENSE file for full details
 
 using System;
 using System.Text;
@@ -34,7 +34,7 @@ namespace HelixSync
             if (DisplayEntryType == FileEntryType.Directory)
                 builder.Append("<DIR> ");
             else
-                builder.Append(FormatBytes5(DisplayFileLength) + " "); //ex 1.5KB
+                builder.Append(HelixUtil.FormatBytes5(DisplayFileLength) + " "); //ex 1.5KB
             
             if (DisplayOperation == PreSyncOperation.Add)
                 builder.Append("+ ");
@@ -60,30 +60,6 @@ namespace HelixSync
 
             builder.Append(DecrFileName ?? "");
             return builder.ToString();
-        }
-        
-
-        /// <summary>
-        /// Formats a size to ensure that it can fit in 5 characters.
-        /// It will adjusting the decimal percision as necessary.
-        /// </summary>
-        private static string FormatBytes5(long bytes)
-        {
-            string[] units = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };
-            double dblSByte = bytes;
-            foreach (string unit in units)
-            {
-                if (dblSByte < 1000 && unit == "B") //Byte should never show a decimal
-                    return string.Format("{0,3:0}{1,-2}", dblSByte, unit);
-                else if (dblSByte < 10)
-                    return string.Format("{0,3:0.0}{1,-2}", dblSByte, unit);
-                else if (dblSByte >= 10 && dblSByte <= 1000)
-                    return string.Format("{0,3:0}{1,-2}", dblSByte, unit);
-
-                dblSByte = dblSByte / 1024.0;
-            }
-
-            return "MAX  ";
         }
     }
 }
