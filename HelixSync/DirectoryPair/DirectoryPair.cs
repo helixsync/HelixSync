@@ -162,14 +162,158 @@ namespace HelixSync
 
             //todo: reorder based on dependencies
             //todo: detect conflicts
-            return matches.OrderBy(m =>
+
+            return Sort(matches);
+
+            //return matches.OrderBy(m =>
+            //    {
+            //        byte[] rno = new byte[5];
+            //        rng.GetBytes(rno);
+            //        int randomvalue = BitConverter.ToInt32(rno, 0);
+            //        return randomvalue;
+            //    })
+            //    .ToList();
+        }
+
+        private List<PreSyncDetails> Sort(List<PreSyncDetails> list)
+        {
+            Dictionary<string, List<PreSyncDetails>> fileNameIndex = new Dictionary<string, List<PreSyncDetails>>();
+            Dictionary<string, List<PreSyncDetails>> fileNameUpperIndex = new Dictionary<string, List<PreSyncDetails>>();
+            Dictionary<string, List<PreSyncDetails>> fileNameParentIndex = new Dictionary<string, List<PreSyncDetails>>();
+            foreach (var item in list)
+            {
+                var fileName = item.DecrFileName;
+                var fileNameUpper = item.DecrFileName.ToUpperInvariant();
+                var parent = Path.GetDirectoryName(item.DecrFileName);
+
+                if (fileNameIndex.ContainsKey(fileName))
+                    fileNameIndex[fileName].Add(item);
+                else
+                    fileNameIndex.Add(fileName, new List<PreSyncDetails>() { item });
+
+                if (fileNameUpperIndex.ContainsKey(fileNameUpper))
+                    fileNameUpperIndex[fileNameUpper].Add(item);
+                else
+                    fileNameUpperIndex.Add(fileNameUpper, new List<PreSyncDetails>() { item });
+
+                if (!string.IsNullOrEmpty(parent))
                 {
-                    byte[] rno = new byte[5];
-                    rng.GetBytes(rno);
-                    int randomvalue = BitConverter.ToInt32(rno, 0);
-                    return randomvalue;
-                })
-                .ToList();
+                    if (fileNameParentIndex.ContainsKey(parent))
+                        fileNameParentIndex[parent].Add(item);
+                    else
+                        fileNameParentIndex.Add(parent, new List<PreSyncDetails>() { item });
+                }
+            }
+
+            Dictionary<PreSyncDetails, List<PreSyncDetails>> DependChildToParent = new Dictionary<PreSyncDetails, List<PreSyncDetails>>();
+            Dictionary<PreSyncDetails, List<PreSyncDetails>> DependParentToChild = new Dictionary<PreSyncDetails, List<PreSyncDetails>>();
+            List<PreSyncDetails> NoDependents = new List<PreSyncDetails>();
+
+            Action<PreSyncDetails, PreSyncDetails> AddDependent = (child, parent) =>
+            {
+                if (!DependChildToParent.ContainsKey(child))
+                    DependChildToParent.Add(child, new List<PreSyncDetails>());
+                if (!DependParentToChild.ContainsKey(parent))
+                    DependParentToChild.Add(parent, new List<PreSyncDetails>());
+
+                DependParentToChild[parent].Add(child);
+                DependChildToParent[child].Add(parent);
+
+                //NoDependents.Remove(child);
+            };
+            
+            foreach (var item in list)
+            {
+                if (item.DisplayOperation == PreSyncOperation.Add)
+                {
+                    { //adds parent directory (adds) if exist
+                        string parentDirectory = Path.GetDirectoryName(item.DecrFileName);
+                        if (!string.IsNullOrEmpty(parentDirectory))
+                        {
+                            if (fileNameIndex.TryGetValue(parentDirectory, out var parents))
+                            {
+                                foreach (var parent in parents)
+                                {
+                                    if (parent.DisplayOperation == PreSyncOperation.Add)
+                                        AddDependent(item, parent);
+                                }
+                            }
+                        }
+                    }
+
+                   
+                    {   //adds same case deletes (if exists)
+                        if (fileNameUpperIndex.TryGetValue(item.DecrFileName.ToUpperInvariant(), out var parents))
+                        {
+                            foreach (var parent in parents)
+                            {
+                                if (parent.DisplayOperation == PreSyncOperation.Remove)
+                                    AddDependent(item, parent);
+                            }
+                        }
+                    }
+
+                    if (!DependChildToParent.ContainsKey(item))
+                        NoDependents.Add(item);
+                }
+                else if (item.DisplayOperation == PreSyncOperation.Remove)
+                {
+                    if (fileNameParentIndex.TryGetValue(item.DecrFileName, out var childFiles))
+                    {
+                        foreach(var childFile in childFiles)
+                        {
+                            if (childFile.DisplayOperation == PreSyncOperation.Remove)
+                            {
+                                //removal of this directory is depended on the removal of the child directory
+                                AddDependent(item, childFile);
+                            }
+                        }
+                    }
+                    
+                    if (!DependChildToParent.ContainsKey(item))
+                        NoDependents.Add(item);
+                }
+                else
+                {
+                    NoDependents.Add(item);
+                }
+            }
+
+            var rng = RandomNumberGenerator.Create();
+
+            List<PreSyncDetails> outputList = new List<PreSyncDetails>();
+            while (NoDependents.Count > 0)
+            {
+
+                byte[] rno = new byte[5];
+                rng.GetBytes(rno);
+                int randomvalue = (int)(BitConverter.ToUInt32(rno, 0) % (uint)NoDependents.Count);
+
+                var next = NoDependents[randomvalue];
+                NoDependents.RemoveAt(randomvalue);
+                outputList.Add(next);
+
+                //clear dependents, adds to the NoDependents list if posible
+                if (DependParentToChild.TryGetValue(next, out var children))
+                {
+                    foreach(var child in children)
+                    {
+                        DependChildToParent[child].Remove(next);
+                        if (DependChildToParent[child].Count == 0)
+                        {
+                            DependChildToParent.Remove(child);
+                            NoDependents.Add(child);
+                        }
+                    }
+                    DependParentToChild.Remove(next);
+                }
+
+            }
+
+            if (DependChildToParent.Count > 0)
+                throw new Exception("Unexpected circular reference found when sorting presyncdetails");
+            
+            return outputList;
         }
 
         private void RefreshPreSyncEncrHeader(PreSyncDetails preSyncDetails)

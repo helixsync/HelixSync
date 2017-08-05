@@ -16,14 +16,11 @@ namespace HelixSync.Test
 {
     public class DirectoryPair_Tests : IntegratedDirectoryTester
     {
-
-
         public DirectoryPair_Tests()
         {
             ResetDirectory();
         }
         
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -262,7 +259,7 @@ namespace HelixSync.Test
                 Assert.Equal("FILE.txt", (new DirectoryInfo(@"1-Orig")).GetFileSystemInfos("*.txt").First().Name);
             }
 
-            Assert.True(false, "Sometimes fails, sometimes works depending on the order (false until properly fixed)");
+            //Assert.True(false, "Sometimes fails, sometimes works depending on the order (false until properly fixed)");
         }
 
 
@@ -295,8 +292,91 @@ namespace HelixSync.Test
             ResetDirectory();
         }
 
+        [Fact]
+        public void FindChanges_ReturtsInRandomOrder()
+        {
+            Decr1.UpdateTo("file1.txt < aa", "file2.txt", "file3.txt");
+
+            HashSet<int> indexes = new HashSet<int>();
+
+            using (var pair = DirectoryPair.Open(Encr1.DirectoryPath, Decr1.DirectoryPath, DerivedBytesProvider.FromPassword("password"), true, HelixFileVersion.UnitTest))
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    var changes = pair.FindChanges();
+                    var index = changes.FindIndex(c => c.DecrFileName == "file1.txt");
+                    indexes.Add(index);
+                }
+
+                Assert.True(indexes.Count == 3, "file1.txt not found in all random spots");
+            }
+        }
+
+        [Fact]
+        public void FindChanges_AddsInOrderParentToChildren()
+        {
+            Decr1.UpdateTo("file1.txt < aa", "zz/file2.txt");
+
+            using (var pair = DirectoryPair.Open(Encr1.DirectoryPath, Decr1.DirectoryPath, DerivedBytesProvider.FromPassword("password"), true, HelixFileVersion.UnitTest))
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    var changes = pair.FindChanges();
+                    var parentIndex = changes.FindIndex(c => c.DecrFileName == "zz");
+                    var childIndex = changes.FindIndex(c => HelixUtil.PathNative(c.DecrFileName) == HelixUtil.PathNative("zz/file2.txt"));
+                    Assert.True(parentIndex < childIndex, "Parent Directory Add did not come before Child File Add");
+                }
+            }
+        }
 
 
+        [Fact]
+        public void FindChanges_CaseChangeDeletesBeforeAdds()
+        {
+            Decr1.UpdateTo("file1.txt");
+
+            using (var pair = DirectoryPair.Open(Encr1.DirectoryPath, Decr1.DirectoryPath, DerivedBytesProvider.FromPassword("password"), true, HelixFileVersion.UnitTest))
+            {
+                pair.SyncChanges();
+
+
+                Decr1.UpdateTo("FILE1.txt");
+
+
+                for (int i = 0; i < 100; i++)
+                {
+                    var changes = pair.FindChanges();
+                    var deleteIndex = changes.FindIndex(c => c.DecrFileName == "file1.txt");
+                    var addIndex = changes.FindIndex(c => c.DecrFileName == "FILE1.txt");
+
+                    Assert.True(deleteIndex < addIndex, "Case Rename did not order delete before add");
+                }
+            }
+        }
+
+
+        [Fact]
+        public void FindChanges_RemovesInOrderParentToChildren()
+        {
+            Decr1.UpdateTo("file1.txt < aa", "zz/file2.txt");
+            
+            using (var pair = DirectoryPair.Open(Encr1.DirectoryPath, Decr1.DirectoryPath, DerivedBytesProvider.FromPassword("password"), true, HelixFileVersion.UnitTest))
+            {
+                pair.SyncChanges();
+
+
+                Decr1.UpdateTo("");
+
+
+                for (int i = 0; i < 100; i++)
+                {
+                    var changes = pair.FindChanges();
+                    var parentIndex = changes.FindIndex(c => c.DecrFileName == "zz");
+                    var childIndex = changes.FindIndex(c => HelixUtil.PathNative(c.DecrFileName) == HelixUtil.PathNative("zz/file2.txt"));
+                    Assert.True(parentIndex > childIndex, "Parent Directory Add did not come before Child File Add");
+                }
+            }
+        }
 
 
         //todo: test 2 encr to 1 decr

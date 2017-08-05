@@ -7,15 +7,23 @@ using Xunit;
 
 namespace HelixSync.Test
 {
-    public class IntegratedDirectoryTester : IDisposable
+    public abstract class IntegratedDirectoryTester : IDisposable
     {
-        public DirectoryTester Decr1 { get; }  = new DirectoryTester("Decr1", new Regex(@"\.helix.*"));
-        public DirectoryTester Decr2 { get; }  = new DirectoryTester("Decr2", new Regex(@"\.helix.*"));
-        public DirectoryTester Encr1 { get; }  = new DirectoryTester("Encr1");
-        public DirectoryTester Encr2 { get; }  = new DirectoryTester("Encr2");
+        public string BaseDir { get; }
+        
+        public DirectoryTester Decr1 { get; }
+        public DirectoryTester Decr2 { get; }
+        public DirectoryTester Encr1 { get; }
+        public DirectoryTester Encr2 { get; }                              
 
         public IntegratedDirectoryTester()
         {
+            BaseDir = this.GetType().Name;
+            Decr1  = new DirectoryTester($"{BaseDir}/Decr1", new Regex(@"\.helix.*"));
+            Decr2  = new DirectoryTester($"{BaseDir}/Decr2", new Regex(@"\.helix.*"));
+            Encr1  = new DirectoryTester($"{BaseDir}/Encr1");
+            Encr2  = new DirectoryTester($"{BaseDir}/Encr2");
+
             Decr1.Clear(true);
             Decr2.Clear(true);
             Encr1.Clear(true);
