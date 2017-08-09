@@ -94,14 +94,17 @@ namespace HelixSync
 
             var di = new DirectoryInfo(path);
 
+            var parent = di.Parent;
+            if (parent == null) 
+                return path;
             
-            var properCaseName = di.Parent.GetFileSystemInfos(di.Name).FirstOrDefault();
+            var properCaseName = parent.GetFileSystemInfos(di.Name).FirstOrDefault();
 
             if (properCaseName == null)
             {
                 //When using Linux with a cases insensitive file system Linux still does a case sensitive search
                 //So we have to do a full search to make this work correctly
-                properCaseName = di.Parent.GetFileSystemInfos()
+                properCaseName = parent.GetFileSystemInfos()
                     .Where(i => string.Equals(i.Name, di.Name, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             }
 
