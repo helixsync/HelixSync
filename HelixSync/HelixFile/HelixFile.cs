@@ -178,15 +178,21 @@ namespace HelixSync
             using (var decryptor = new HelixFileDecryptor(inputStream))
             {
 
-                decryptor.Initialize(derivedBytesProvider);
+                try {
+                    decryptor.Initialize(derivedBytesProvider);
 
-                FileEntry header = decryptor.ReadHeader();
+                    FileEntry header = decryptor.ReadHeader();
 
-                HeaderCorruptionException ex;
-                if (!header.IsValid(out ex))
-                    throw ex;
+                    HeaderCorruptionException ex;
+                    if (!header.IsValid(out ex))
+                        throw ex;
 
-                return header;
+                    return header;
+                } catch(FileCorruptionException ex){
+                    throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
+                } catch(AuthenticatedEncryptionException ex){
+                    throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
+                }
             }
         }
 
