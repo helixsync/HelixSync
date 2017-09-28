@@ -601,6 +601,13 @@ namespace HelixSync
                 SyncLog.Add(fileSystemEntry);
                 return SyncResults.Success();
             }
+            else if (entry.SyncMode == PreSyncMode.Match || entry.SyncMode == PreSyncMode.Unchanged)
+            {
+                //Add to Log file (changed to be equal on both sides)
+                SyncLogEntry fileSystemEntry = CreateNewLogEntryFromDecrPath(entry.DecrFileName);
+                SyncLog.Add(fileSystemEntry);
+                return SyncResults.Success();
+            }
 
             return SyncResults.Failure(new HelixException($"Invalid sync mode {entry.SyncMode}"));
         }
