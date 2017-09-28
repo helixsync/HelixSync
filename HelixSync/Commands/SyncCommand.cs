@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 
 namespace HelixSync
@@ -11,7 +12,7 @@ namespace HelixSync
     {
         public static void Sync(SyncOptions options, ConsoleEx consoleEx = null, HelixFileVersion fileVersion = null)
         {
-            consoleEx = consoleEx ?? new ConsoleEx();
+                consoleEx = consoleEx ?? new ConsoleEx();
             consoleEx.WriteLine("------------------------");
             consoleEx.WriteLine("-- HelixSync " + typeof(SyncCommand).GetTypeInfo().Assembly.GetName().Version.ToString());
             consoleEx.WriteLine("------------------------");
@@ -146,18 +147,75 @@ namespace HelixSync
                     if (changes.Count == 0)
                         consoleEx.WriteLine("--No Changes--");
 
+
+
+                    int decrAdd = 0;
+                    int decrRemove = 0;
+                    int decrChange = 0;
+                    int decrOther = 0;
+
+                    int encrAdd = 0;
+                    int encrRemove = 0;
+                    int encrChange = 0;
+                    int encrOther = 0;
+
+                    int conflict = 0;
+
                     foreach (PreSyncDetails change in changes)
                     {
                         pair.RefreshPreSyncDetails(change);
                         consoleEx.WriteLine(change);
 
+                        //todo: prompt on conflict
+
+                        if (change.SyncMode == PreSyncMode.EncryptedSide)
+                        {
+                            if (change.DisplayOperation == PreSyncOperation.Add)
+                                encrAdd++;
+                            else if (change.DisplayOperation == PreSyncOperation.Remove)
+                                encrRemove++;
+                            else if (change.DisplayOperation == PreSyncOperation.Change)
+                                encrChange++;
+                            else
+                                encrOther++;
+
+                        }
+                        else if (change.SyncMode == PreSyncMode.DecryptedSide)
+                        {
+
+                            if (change.DisplayOperation == PreSyncOperation.Add)
+                                decrAdd++;
+                            else if (change.DisplayOperation == PreSyncOperation.Remove)
+                                decrRemove++;
+                            else if (change.DisplayOperation == PreSyncOperation.Change)
+                                decrChange++;
+                            else
+                                decrOther++;
+                        }
+                        else if (change.SyncMode == PreSyncMode.Conflict)
+                        {
+                            conflict++;
+                        }
+
+
                         if (!options.WhatIf)
                         {
                             var syncResult = pair.TrySync(change);
+                            //todo: add to error log
                             if (syncResult.Exception != null)
                                 consoleEx.WriteLine("..." + syncResult.Exception.Message);
                         }
                     }
+
+                    //todo: show totals
+
+                    Console.WriteLine("== Summary ==");
+                    Console.WriteLine($"           | Add     | Remove  | Change  | Other   |");
+                    Console.WriteLine($"ENC->DEC   | {encrAdd,7} | {encrRemove,7} | {encrChange,7} | {encrOther,7} |");
+                    Console.WriteLine($"DEC->ENC   | {decrAdd,7} | {decrRemove,7} | {decrChange,7} | {decrOther,7} |");
+
+                    //todo: fix unchanged
+                    Console.WriteLine($"Other      |     --- |     --- |     --- | {conflict,7:#,0} |");
                 }
             }
         }
