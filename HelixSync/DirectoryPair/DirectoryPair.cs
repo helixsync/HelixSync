@@ -403,7 +403,7 @@ namespace HelixSync
                 {
                     preSyncDetails.SyncMode = PreSyncMode.Match;
                 }
-                else if (preSyncDetails.DecrInfo.LastWriteTimeUtc == preSyncDetails.EncrHeader.LastWriteTimeUtc
+                else if (preSyncDetails.DecrInfo?.LastWriteTimeUtc == preSyncDetails.EncrHeader?.LastWriteTimeUtc
                     && preSyncDetails.DecrInfo.EntryType == preSyncDetails.EncrHeader.EntryType)
                 {
                     preSyncDetails.SyncMode = PreSyncMode.Match; //Both changed however still match
@@ -542,6 +542,9 @@ namespace HelixSync
 
         public SyncResults TrySync(PreSyncDetails entry)
         {
+            //todo: ensure the entry direction and operation end up being the same
+            //todo: ensure all the calling methods do something with the results
+
             if (WhatIf)
                 throw new InvalidOperationException("Unable to perform sync when WhatIf mode is set to true");
             if (entry == null)
