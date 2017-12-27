@@ -72,7 +72,7 @@ namespace HelixSync
             if (!streamIn.CanRead)
                 throw new ArgumentException("stream must be readable", nameof(streamIn));
             if (length < 0)
-                throw new ArgumentOutOfRangeException(nameof(length), "length musth be greater than or equal to 0");
+                throw new ArgumentOutOfRangeException(nameof(length), "length must be greater than or equal to 0");
 
             if (!headerWritten)
                 throw new InvalidOperationException("Header must be written before content");

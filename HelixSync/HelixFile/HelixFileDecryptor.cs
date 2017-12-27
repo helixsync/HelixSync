@@ -73,16 +73,16 @@ namespace HelixSync
             }
             catch(HMACException ex)
             {
-                throw new FileCorruptionException("HMAC Error, most likely file curruption, " + ex.Message, ex);
+                throw new FileCorruptionException("HMAC Error, most likely file corruption, " + ex.Message, ex);
             }
         }
 
 
-        private class StreamWraper : Stream
+        private class StreamWrapper : Stream
         {
             private Stream m_ParentStream;
 
-            public StreamWraper(Stream parentStream)
+            public StreamWrapper(Stream parentStream)
             {
                 m_ParentStream = parentStream;
             }
@@ -126,7 +126,7 @@ namespace HelixSync
                 }
                 catch (HMACException ex)
                 {
-                    throw new FileCorruptionException("HMAC Error, most likely file curruption, " + ex.Message, ex);
+                    throw new FileCorruptionException("HMAC Error, most likely file corruption, " + ex.Message, ex);
                 }
             }
 
@@ -154,7 +154,7 @@ namespace HelixSync
             if (!m_HeaderRead)
                 throw new InvalidOperationException("Must read header before retrieving content stream");
 
-            return new StreamWraper(decryptor.NextBlockAsStream());
+            return new StreamWrapper(decryptor.NextBlockAsStream());
         }
         public string GetContentString(int maxLength = 10*1024*1024)
         {

@@ -147,7 +147,7 @@ namespace HelixSync
             if (string.IsNullOrWhiteSpace(path))
                 return false;
 
-            //to support linux the path/filename restrictions is extreamly minimal
+            //to support linux the path/filename restrictions is extremely minimal
             foreach (char char1 in new char[] { '\0', '\n', '\r' })
             {
                 if (path.Contains(char1))
@@ -194,7 +194,7 @@ namespace HelixSync
         }
 
         /// <summary>
-        /// Removes the quote and unescapes a string
+        /// Removes the quote and un-escapes a string
         /// </summary>
         public static string Unquote(string value)
         {
@@ -226,7 +226,7 @@ namespace HelixSync
 
         /// <summary>
         /// Formats a size to ensure that it can fit in 5 characters.
-        /// It will adjusting the decimal percision as necessary.
+        /// It will adjusting the decimal precision as necessary.
         /// </summary>
         public static string FormatBytes5(long bytes)
         {
