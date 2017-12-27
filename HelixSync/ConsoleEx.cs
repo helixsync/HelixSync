@@ -11,6 +11,11 @@ namespace HelixSync
 {
     public class ConsoleEx
     {
+        /// <summary>
+        /// Indicates if the user has the ability to respond to console prompts
+        /// </summary>
+        public bool Interactive => Environment.UserInteractive && !Console.IsInputRedirected;
+
         public void WriteLine()
         {
             BeforeWriteLine?.Invoke(null);
@@ -42,6 +47,9 @@ namespace HelixSync
         /// </summary>
         public bool PromptBool(string prompt, bool? defaultValue = null)
         {
+            if (!Interactive)
+                throw new InvalidOperationException("Unable to prompt in non-interactive console");
+
             while (true)
             {
                 Console.Write(prompt);
