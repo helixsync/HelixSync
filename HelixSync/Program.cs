@@ -47,30 +47,7 @@ namespace HelixSync
             Console.WriteLine("** ALWAYS backup your data before using **");
             Console.WriteLine();
 
-            if (args.Length <= 0){
-                Console.WriteLine("Usage");
-                Console.WriteLine("helixsync inspect \"file\" [options]");
-                Console.WriteLine("helixsync sync \"source\" \"destination\" [options]");
-                return -1;
-            }
-            else if (string.Equals(args[0], "inspect", StringComparison.OrdinalIgnoreCase))
-            {
-                var options = new InspectOptions();
-                ArgumentParser.ParseCommandLineArguments(options, args, 1);
-                InspectCommand.Inspect(options);
-                return 0;
-            }
-            else if (string.Equals(args[0], "sync", StringComparison.OrdinalIgnoreCase))
-            {
-                SyncOptions options = new SyncOptions();
-                ArgumentParser.ParseCommandLineArguments(options, args, 1);
-                return SyncCommand.Sync(options);
-            }
-            else
-            {
-                Console.WriteLine($"Invalid command '{args[0]}'. Expecting sync, inspect, ...");
-                return -1;
-            }
+            return CommandProvider.Invoke(args);
         }
    }
 }

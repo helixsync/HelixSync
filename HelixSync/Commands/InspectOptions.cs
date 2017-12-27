@@ -15,16 +15,12 @@ namespace HelixSync
 
         //todo: implement the various content formats
         [DefaultValue("auto")]
-        [Description(@"
-Describes how to format the content for inspection
-
-Allowed options are: 
-  auto:   attempts to detect type automaticly
+        [Description(@"Describes how to format the content for inspection
+  auto:   attempts to detect type automatically
   text:   text only
   binary: displays the hex values
   json:   adds indentation to json string
-  none:   does not output any content
-")]
+  none:   does not output any content")]
         public string ContentFormat { get; set; } = "auto";
 
         [Category("Position 0")]

@@ -3,6 +3,7 @@
 
 using System;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace HelixSync
 {
@@ -12,21 +13,25 @@ namespace HelixSync
         {
         }
 
-        [Category("Position 0")]
+        [Argument(Required = true, ShortName="d", PreferShortName = true, ValuePlaceholder="DecryptDirPath")]
+        [Description("The path to the decrypted directory")]
         public string DecrDirectory { get; set; }
 
-        [Category("Position 1")]
+        [Argument(Required = true, ShortName = "e", PreferShortName = true, ValuePlaceholder="EncryptDirPath")]
+        [Description("The path to the encrypted directory")]
         public string EncrDirectory { get; set; }
 
         [DefaultValue("")]
         public string Password { get; set; }
 
+        [Argument(Recommended = true)]
         [Description("When set will display changes without making any")]
         public bool WhatIf { get; set; }
 
         [Description("Initialize repository without prompt")]
         public bool Initialize { get; set;}
 
+        [Description("Path to a key file. Allowed multiple values")]
         public string[] KeyFile { get; set; }
 
         public override string ToString()
