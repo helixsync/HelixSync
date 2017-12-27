@@ -13,6 +13,7 @@ namespace HelixSync
     {
         public void WriteLine()
         {
+            BeforeWriteLine?.Invoke(null);
             Console.WriteLine();
         }
         public void WriteLine(object value)
@@ -21,7 +22,20 @@ namespace HelixSync
             Console.WriteLine(value);
         }
 
+        public void WriteErrorLine()
+        {
+            BeforeWriteErrorLine?.Invoke(null);
+            Console.Error.WriteLine(); 
+        }
+        
+        public void WriteErrorLine(object value)
+        {
+            BeforeWriteErrorLine?.Invoke(value);
+            Console.Error.WriteLine(value);
+        }
+
         public Action<object> BeforeWriteLine { get; set; }
+        public Action<object> BeforeWriteErrorLine { get; set; }
 
         /// <summary>
         /// Using the console prompts for a boolean (yes/no) value
