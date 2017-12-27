@@ -17,5 +17,11 @@ dotnet run --project "HelixSync/HelixSync" -- sync "DecryptedFolder" "EncryptedF
 
 The software has been developed using C# .NET for [.NET Core 2.0](https://www.microsoft.com/net/core). It should be able to run on any platform supported by this framework including Windows, Linux and Mac.
 
+## Roadmap
+
+- Add continual sync through directory monitoring
+- Add a GUI and tray icon (with continual sync)
+
 ## License
+
 HelixSync is released as Open Source software using the [GPLv3](https://www.gnu.org/licenses/gpl.html)
