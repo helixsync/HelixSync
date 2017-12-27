@@ -16,6 +16,11 @@ namespace HelixSync
         /// </summary>
         public bool Interactive => Environment.UserInteractive && !Console.IsInputRedirected;
 
+        public void Write(object value)
+        {
+            Console.Write(value);
+        }
+
         public void WriteLine()
         {
             BeforeWriteLine?.Invoke(null);
@@ -63,5 +68,7 @@ namespace HelixSync
                     return (bool)defaultValue;
             }
         }
+
+
     }
 }

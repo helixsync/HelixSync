@@ -14,34 +14,39 @@ namespace HelixSync
 {
     class InspectCommand
     {
-        public static void Inspect(InspectOptions options)
+        public static int Inspect(InspectOptions options, ConsoleEx consoleEx = null)
         {
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
+
+            consoleEx = consoleEx ?? new ConsoleEx();
+
             using (Stream fileIn = File.OpenRead(options.File))
             using (HelixFileDecryptor decryptor = new HelixFileDecryptor(fileIn))
             {
-                Console.WriteLine("== Outer Header ==");
+                consoleEx.WriteLine("== Outer Header ==");
                 Dictionary<string, byte[]> header = null;
                 decryptor.Initialize(DerivedBytesProvider.FromPassword(options.Password, options.KeyFile), (h) => header = h);
-                Console.WriteLine("Designator:    "
+                consoleEx.WriteLine("Designator:    "
                                   + BitConverter.ToString(header[nameof(FileHeader.fileDesignator)]).Replace("-", "")
                                   + " (" + new string(Encoding.ASCII.GetString(header[nameof(FileHeader.fileDesignator)])
                                                       .Select(c => Char.IsControl(c) ? '?' : c)
                                                       .ToArray()) + ")");
-                Console.WriteLine("Password Salt: " + BitConverter.ToString(header[nameof(FileHeader.passwordSalt)]).Replace("-", ""));
-                Console.WriteLine("HMAC Salt:     " + BitConverter.ToString(header[nameof(FileHeader.hmacSalt)]).Replace("-", ""));
-                Console.WriteLine("IV:            " + BitConverter.ToString(header[nameof(FileHeader.iv)]).Replace("-", ""));
-                Console.WriteLine("Authn (HMAC):  " + BitConverter.ToString(header[nameof(FileHeader.headerAuthnDisk)]).Replace("-",""));
-                Console.WriteLine();
+                consoleEx.WriteLine("Password Salt: " + BitConverter.ToString(header[nameof(FileHeader.passwordSalt)]).Replace("-", ""));
+                consoleEx.WriteLine("HMAC Salt:     " + BitConverter.ToString(header[nameof(FileHeader.hmacSalt)]).Replace("-", ""));
+                consoleEx.WriteLine("IV:            " + BitConverter.ToString(header[nameof(FileHeader.iv)]).Replace("-", ""));
+                consoleEx.WriteLine("Authn (HMAC):  " + BitConverter.ToString(header[nameof(FileHeader.headerAuthnDisk)]).Replace("-",""));
+                consoleEx.WriteLine();
 
-                Console.WriteLine("== Inner Header ==");
+                consoleEx.WriteLine("== Inner Header ==");
                 decryptor.ReadHeader(
-                    afterRawMetadata: (r) => Console.WriteLine(JsonFormat(r)));
-                Console.WriteLine();
+                    afterRawMetadata: (r) => consoleEx.WriteLine(JsonFormat(r)));
+                consoleEx.WriteLine();
 
                 using (Stream content = decryptor.GetContentStream())
                 {
-                    ContentPreview(content);
-                    Console.WriteLine();
+                    ContentPreview(content, consoleEx);
+                    consoleEx.WriteLine();
                 }
             }
 
@@ -53,29 +58,31 @@ namespace HelixSync
                 decryptor.ReadHeader();
                 using (Stream content = decryptor.GetContentStream())
                 {
-                    Checksum(content);
+                    Checksum(content, consoleEx);
                 }
             }
+
+            return 0;
         }
 
         /// <summary>
-        /// Calculates the checksum (with progress) and writes it to the console.
+        /// Calculates the checksum (with progress) and writes it to the console
         /// </summary>
-        private static void Checksum(Stream stream)
+        private static void Checksum(Stream stream, ConsoleEx consoleEx)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
             if (!stream.CanRead)
                 throw new ArgumentOutOfRangeException(nameof(stream), "stream must have CanRead set to true");
 
-            Console.WriteLine("== Content Checksum (MD5) ==");
+            consoleEx.WriteLine("== Content Checksum (MD5) ==");
             using (MD5 md5 = MD5.Create())
             {
-                Console.Write("[    ] Calculating MD5...".PadRight(40) + new string('\b', 40));
-                Action<double> onProgressChange = p => Console.Write("[{0,4:0%}]" + new string('\b', 6), p);
+                consoleEx.Write("[    ] Calculating MD5...".PadRight(40) + new string('\b', 40));
+                Action<double> onProgressChange = p => consoleEx.Write($"[{p:0,4:0%}]" + new string('\b', 6));
                 var checksum = md5.ComputeHash(new ProgressStream(stream, onProgressChange));
-                Console.Write(new string(' ', 40) + new string('\b', 40)); //Clears the line
-                Console.WriteLine("MD5: " + BitConverter.ToString(checksum).Replace("-", ""));
+                consoleEx.Write(new string(' ', 40) + new string('\b', 40)); //Clears the line
+                consoleEx.WriteLine("MD5: " + BitConverter.ToString(checksum).Replace("-", ""));
             }
         }
 
@@ -152,12 +159,12 @@ namespace HelixSync
         }
         
         /// <summary>
-        /// Displays a preview of the content (to the console), automaticly determining the best viewer.
+        /// Displays a preview of the content (to the console), automatically determining the best viewer.
         /// </summary>
         /// <param name="stream">The stream for which to load the preview data</param>
         /// <param name="type">(option) used to override the automatic detected viewer</param>
         /// <param name="targetLength">(option) used to override the default length of preview</param>
-        private static void ContentPreview(Stream stream, string type = "auto", int targetLength = -1)
+        private static void ContentPreview(Stream stream, ConsoleEx consoleEx, string type = "auto", int targetLength = -1)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
@@ -171,7 +178,7 @@ namespace HelixSync
             byte[] content = new byte[targetLength <= 0 ? defaultLength : targetLength];
             int length = stream.Read(content, 0, content.Length);
 
-            string disp;
+            string display;
 
             if (string.IsNullOrEmpty(type) || type == "auto")
                 type = DetectType(content, offset, length);
@@ -184,34 +191,34 @@ namespace HelixSync
             bool partial = length < stream.Length;
             if (length < stream.Length)
             {
-                disp = "== Content Preview (" + type + " " + FormatSizeBytes(length) + " of " + FormatSizeBytes(stream.Length) + ") ==" + Environment.NewLine;
+                display = "== Content Preview (" + type + " " + FormatSizeBytes(length) + " of " + FormatSizeBytes(stream.Length) + ") ==" + Environment.NewLine;
             }
             else
-                disp = "== Content Preview (" + type + " " + FormatSizeBytes(stream.Length) + ") ==" + Environment.NewLine;
+                display = "== Content Preview (" + type + " " + FormatSizeBytes(stream.Length) + ") ==" + Environment.NewLine;
 
             if (type == "text")
             {
-                disp += TextDisplay(content, offset, length);
+                display += TextDisplay(content, offset, length);
                 if (partial)
-                    disp += "...";
+                    display += "...";
             }
             else if (type == "json")
             {
-                disp += JsonDisplay(content, offset, length);
+                display += JsonDisplay(content, offset, length);
                 if (partial)
-                    disp += "...";
+                    display += "...";
             }
             else
             {
-                disp += HexDisplay(content, offset, length);
+                display += HexDisplay(content, offset, length);
 
             }
 
-            Console.WriteLine(disp);
+            consoleEx.WriteLine(display);
         }
 
         /// <summary>
-        /// Uses an abreviated form of the size in units of KB, MB or GB
+        /// Uses an abbreviated form of the size in units of KB, MB or GB
         /// </summary>
         private static string FormatSizeBytes(long bytes)
         {
@@ -271,7 +278,7 @@ namespace HelixSync
                 byte[] c1 = new byte[length > 1024 ? 1024 : length];
                 Array.Copy(content, c1, c1.Length);
 
-                //if the text contains any charecter less then 8 (control characters) 
+                //if the text contains any character less then 8 (control characters) 
                 //then in is unlikely text and most likely binary
                 if (c1.Any(b => b <= 8))
                     detectedType = "binary";
@@ -287,7 +294,7 @@ namespace HelixSync
                 {
                     var textContent = text.ReadToEnd();
 
-                    //matches '{' or '[' followed by whitespcae then '{','[','"', '0'-'9'
+                    //matches '{' or '[' followed by whitespace then '{','[','"', '0'-'9'
                     if (System.Text.RegularExpressions.Regex.IsMatch(textContent, @"^[\{\[][\s\r\n\t]*[\{\[\""0-9]", System.Text.RegularExpressions.RegexOptions.Multiline))
                     {
                         detectedType = "json";
