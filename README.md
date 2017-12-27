@@ -2,7 +2,7 @@
 
 HelixSync is a tool that allows you to encrypt an entire directory and incrementally sync changes. This software has been developed out of a desire to add an additional layer of privacy and security to cloud storage providers (Dropbox, Google Drive, ...). It has been designed to work well with these providers by providing file by file incremental encryption.
 
-**The software is still in alpha, extreme caution should be taken when using this software. ALWAYS backup your data before using this software**
+***The software is still in alpha, extreme caution should be taken when using this software. ALWAYS backup your data before using this software***
 
 ## Getting Started
 
@@ -19,6 +19,7 @@ The software has been developed using C# .NET for [.NET Core 2.0](https://www.mi
 
 ## Roadmap
 
+- Provide installer with compiled version
 - Add continual sync through directory monitoring
 - Add a GUI and tray icon (with continual sync)
 
