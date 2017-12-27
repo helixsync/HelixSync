@@ -69,7 +69,7 @@ namespace HelixSync
             }
             else
             {
-                Console.WriteLine("Invalid arguments");
+                Console.WriteLine($"Invalid command '{args[0]}'. Expecting sync, inspect, ...");
                 return -1;
             }
         }
