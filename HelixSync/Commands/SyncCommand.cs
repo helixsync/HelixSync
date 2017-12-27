@@ -64,7 +64,7 @@ namespace HelixSync
 
 
 
-                    bool initialize = options.Initialize || consoleEx.PromptBool("Initialized encrypted and decripted directories now? [y/N] ", false);
+                    bool initialize = options.Initialize || consoleEx.PromptBool("Initialized encrypted and decrypted directories now? [y/N] ", false);
                     if (!initialize)
                         throw new OperationCanceledException();
 
@@ -109,7 +109,7 @@ namespace HelixSync
                         foreach (string warning in warnings)
                             consoleEx.WriteLine(".." + warning);
 
-                        bool initialize = options.Initialize || consoleEx.PromptBool("Initialized decripted directory now? [y/N] ", false);
+                        bool initialize = options.Initialize || consoleEx.PromptBool("Initialized decrypted directory now? [y/N] ", false);
                         if (!initialize)
                             throw new OperationCanceledException();
 
