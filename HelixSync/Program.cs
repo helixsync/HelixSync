@@ -64,8 +64,7 @@ namespace HelixSync
             {
                 SyncOptions options = new SyncOptions();
                 ArgumentParser.ParseCommandLineArguments(options, args, 1);
-                SyncCommand.Sync(options);
-                return 0;
+                return SyncCommand.Sync(options);
             }
             else
             {

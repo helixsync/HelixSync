@@ -10,9 +10,9 @@ namespace HelixSync
 {
     public static class SyncCommand
     {
-        public static void Sync(SyncOptions options, ConsoleEx consoleEx = null, HelixFileVersion fileVersion = null)
+        public static int Sync(SyncOptions options, ConsoleEx consoleEx = null, HelixFileVersion fileVersion = null)
         {
-                consoleEx = consoleEx ?? new ConsoleEx();
+            consoleEx = consoleEx ?? new ConsoleEx();
             consoleEx.WriteLine("------------------------");
             consoleEx.WriteLine("-- HelixSync " + typeof(SyncCommand).GetTypeInfo().Assembly.GetName().Version.ToString());
             consoleEx.WriteLine("------------------------");
@@ -40,10 +40,10 @@ namespace HelixSync
                     string[] warnings = encrDirectory.PreInitializationWarnings(out error);
                     if (error)
                     {
-                        consoleEx.WriteLine("Encrypted Directory: Unable To Initialize");
+                        consoleEx.WriteErrorLine("Encrypted Directory: Unable To Initialize");
                         foreach (var warning in warnings)
-                            consoleEx.WriteLine(".." + warning);
-                        throw new OperationCanceledException();
+                            consoleEx.WriteErrorLine(".." + warning);
+                        return -1;
                     }
                     consoleEx.WriteLine("Encrypted Directory: Needs Initialization");
                     foreach (string warning in warnings)
@@ -53,20 +53,30 @@ namespace HelixSync
                     warnings = new HelixDecrDirectory(options.DecrDirectory, DirectoryHeader.NewDirectoryId()).PreInitializationWarnings(out error);
                     if (error)
                     {
-                        consoleEx.WriteLine("Decrypted Directory: Unable to initialize");
+                        consoleEx.WriteErrorLine("Decrypted Directory: Unable to initialize");
                         foreach (var warning in warnings)
-                            consoleEx.WriteLine(".." + warning);
-                        throw new OperationCanceledException();
+                            consoleEx.WriteErrorLine(".." + warning);
+                        return -1;
                     }
                     consoleEx.WriteLine("Decrypted Directory: Needs Initialization");
                     foreach (string warning in warnings)
                         consoleEx.WriteLine(".." + warning);
 
 
-
-                    bool initialize = options.Initialize || consoleEx.PromptBool("Initialized encrypted and decrypted directories now? [y/N] ", false);
-                    if (!initialize)
-                        throw new OperationCanceledException();
+                    if (!options.Initialize && !consoleEx.Interactive)
+                    {
+                        consoleEx.WriteErrorLine("To initialize the directory use the -Initialize switch or run in an interactive console.");
+                        return -1;
+                    }
+                    else if (!options.Initialize)
+                    {
+                        bool initializeResponse = consoleEx.PromptBool("Initialized encrypted and decrypted directories now? [y/N] ", false);
+                        if (!initializeResponse)
+                        {
+                            consoleEx.WriteErrorLine("Operation cancelled, must initialize directories before continuing");
+                            return -1;
+                        }
+                    }
 
                     consoleEx.WriteLine();
                     if (options.WhatIf)
@@ -100,18 +110,29 @@ namespace HelixSync
                         string[] warnings = new HelixDecrDirectory(options.DecrDirectory, DirectoryHeader.NewDirectoryId()).PreInitializationWarnings(out error);
                         if (error)
                         {
-                            consoleEx.WriteLine("Decrypted Directory: Unable to initialize");
+                            consoleEx.WriteErrorLine("Decrypted Directory: Unable to initialize");
                             foreach (var warning in warnings)
-                                consoleEx.WriteLine(".." + warning);
-                            throw new OperationCanceledException();
+                                consoleEx.WriteErrorLine(".." + warning);
+                            return -1;
                         }
                         consoleEx.WriteLine("Decrypted Directory: Needs Initialization");
                         foreach (string warning in warnings)
                             consoleEx.WriteLine(".." + warning);
 
-                        bool initialize = options.Initialize || consoleEx.PromptBool("Initialized decrypted directory now? [y/N] ", false);
-                        if (!initialize)
-                            throw new OperationCanceledException();
+                        if (!options.Initialize && !consoleEx.Interactive)
+                        {
+                            consoleEx.WriteErrorLine("To initialize the directory use the -Initialize switch or run in an interactive console.");
+                            return -1;
+                        }
+                        else if (!options.Initialize)
+                        {
+                            bool initializeResponse = consoleEx.PromptBool("Initialized decrypted directory now? [y/N] ", false);
+                            if (!initializeResponse)
+                            {
+                                consoleEx.WriteErrorLine("Operation cancelled, must initialize directories before continuing");
+                                return -1;
+                            }
+                        }
 
                         consoleEx.WriteLine();
                         if (options.WhatIf)
@@ -203,7 +224,7 @@ namespace HelixSync
                             var syncResult = pair.TrySync(change);
                             //todo: add to error log
                             if (syncResult.Exception != null)
-                                consoleEx.WriteLine("..." + syncResult.Exception.Message);
+                                consoleEx.WriteErrorLine("..." + syncResult.Exception.Message);
                         }
                     }
 
@@ -216,6 +237,7 @@ namespace HelixSync
 
                     //todo: fix unchanged
                     Console.WriteLine($"Other      |     --- |     --- |     --- | {conflict,7:#,0} |");
+                    return 0;
                 }
             }
         }
