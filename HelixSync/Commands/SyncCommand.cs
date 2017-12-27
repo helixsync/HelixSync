@@ -163,8 +163,7 @@ namespace HelixSync
                     consoleEx.WriteLine("");
 
                     List<PreSyncDetails> changes = pair.FindChanges();
-
-                    //List<DirectoryChange> changes = pair.FindChanges();
+                    
                     if (changes.Count == 0)
                         consoleEx.WriteLine("--No Changes--");
 

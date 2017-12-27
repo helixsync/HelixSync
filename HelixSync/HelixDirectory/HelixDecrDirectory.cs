@@ -129,7 +129,9 @@ namespace HelixSync
                 throw new InvalidOperationException("EncrDirectoryID must be set prior to initialization");
             if (!IsInitialized())
                 throw new InvalidOperationException("Directory has not been initialized");
-
+            if (IsOpen)
+                throw new InvalidOperationException("Directory is already opened");
+                
             SyncLog = SyncLog.GetLog(GetSyncLogPath(), whatIf);
             IsOpen = true;
         }

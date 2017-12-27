@@ -285,11 +285,19 @@ namespace HelixSync.Test
             return entryCollection;
         }
 
-        public void Clear(bool includeFilteredItems)
+        public void Clear(bool removeAll)
+        {
+            if (removeAll)
+                Clear(null);
+            else
+                Clear(ExcludedItems);
+        }
+
+        public void Clear(Regex excludedItems)
         {
             if (Directory.Exists(DirectoryPath))
             {
-                if (includeFilteredItems)
+                if (excludedItems == null)
                     Directory.Delete(DirectoryPath, true);
                 else {
                     var dirInfo = new DirectoryInfo(DirectoryPath);
@@ -297,13 +305,12 @@ namespace HelixSync.Test
                     {
                         string fileName = entry.FullName.Substring((dirInfo.FullName + "/").Length);
 
-                        if (ExcludedItems == null || !ExcludedItems.IsMatch(fileName))
+                        if (excludedItems == null || !excludedItems.IsMatch(fileName))
                             entry.Delete();
                     }
                 }
             }
         }
-
         public bool EqualTo(params string[] content)
         {
             DirectoryEntryCollection entryCollection = new DirectoryEntryCollection(content);

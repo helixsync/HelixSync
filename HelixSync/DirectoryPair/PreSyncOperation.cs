@@ -6,6 +6,7 @@
         Add,
         Remove,
         Change,
-        Error
+        Error,
+        Purge
     }
 }

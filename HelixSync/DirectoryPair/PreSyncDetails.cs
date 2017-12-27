@@ -33,6 +33,8 @@ namespace HelixSync
 
             if (DisplayEntryType == FileEntryType.Directory)
                 builder.Append("<DIR> ");
+            else if (DisplayEntryType == FileEntryType.Purged)
+                builder.Append("<PUR> ");
             else
                 builder.Append(HelixUtil.FormatBytes5(DisplayFileLength) + " "); //ex 1.5KB
             
@@ -42,6 +44,8 @@ namespace HelixSync
                 builder.Append("- ");
             else if (DisplayOperation == PreSyncOperation.Change)
                 builder.Append("c ");
+            else if (DisplayOperation == PreSyncOperation.Purge)
+                builder.Append("~ ");
             else if (DisplayOperation == PreSyncOperation.Error)
                 builder.Append("! ");
             else
@@ -60,6 +64,25 @@ namespace HelixSync
 
             builder.Append(DecrFileName ?? "");
             return builder.ToString();
+        }
+
+        public string DiagnosticString()
+        {
+            return 
+                $"DecrFileName: {this.DecrFileName}\n" +
+                $"EncrFileName: {this.EncrFileName}\n" +
+                $"DecrEntryType: {DecrInfo?.EntryType}\n" +
+                $"EncrEntryType: {EncrInfo?.EntryType}\n" +
+                $"LogEntry: {this.LogEntry}\n" +
+                $"FileEntryType: {this.DisplayEntryType}\n";
+        }
+
+        internal SyncLogEntry GetUpdatedLogEntry()
+        {
+            if (this.DisplayOperation == PreSyncOperation.Purge)
+                return new SyncLogEntry(FileEntryType.Purged, this.DecrFileName, DateTime.MinValue, this.EncrFileName, DateTime.MinValue);
+            else
+                throw new NotImplementedException(); //todo: implement the remaining logs
         }
     }
 }

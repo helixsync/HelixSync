@@ -24,7 +24,6 @@ namespace HelixSync.Test
 
         }
         
-
         public void SyncDecr1andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
         {
             SyncOptions options = new SyncOptions
@@ -64,6 +63,14 @@ namespace HelixSync.Test
             };
 
             SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
+        }
+
+        public SyncLogEntry[] Decr1AndEncr1SyncLog() 
+        {
+            using(var pair = DirectoryPair.Open(Encr1.DirectoryPath, Decr1.DirectoryPath,  DerivedBytesProvider.FromPassword("secret"), true, HelixFileVersion.UnitTest)) 
+            {
+                return pair.DecrDirectory.SyncLog.ToArray();
+            }
         }
 
         [Fact]
@@ -194,6 +201,41 @@ namespace HelixSync.Test
                             message);
             }
         }
+
+        [Fact]
+        public void SyncCommand_PurgedFile()
+        {
+            Decr1.UpdateTo("file1.txt < aa");
+            SyncDecr1andEncr1();
+
+            {
+                var syncLog = Decr1AndEncr1SyncLog();
+                Assert.True(syncLog.Length == 1);
+                Assert.True(syncLog[0].DecrFileName == "file1.txt");
+                Assert.True(syncLog[0].EntryType == FileEntryType.File);
+            }
+
+            Decr1.UpdateTo("");
+            SyncDecr1andEncr1();
+
+            {
+                var syncLog = Decr1AndEncr1SyncLog();
+                Assert.True(syncLog.Length == 1);
+                Assert.True(syncLog[0].DecrFileName == "file1.txt");
+                Assert.True(syncLog[0].EntryType == FileEntryType.Removed);
+            }
+
+            //removes the encr file should trigger a purge
+            Encr1.Clear(new Regex("helix.hx"));
+
+            SyncDecr1andEncr1();
+ 
+            {
+                var syncLog = Decr1AndEncr1SyncLog();
+                Assert.True(syncLog.Length == 0);
+            }
+        }
+
 
     }
 }

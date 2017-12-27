@@ -27,7 +27,7 @@ namespace HelixSync
                 throw new ArgumentException("DecrDirectory must be open first", nameof(decrDirectory));
             if (encrDirectory.IsOpen && encrDirectory.Header.DirectoryId != decrDirectory.EncrDirectoryId)
                 throw new InvalidOperationException("DecrDirectory and EncrDirectory's Directory Id do not match");
-            
+
             WhatIf = whatIf;
             EncrDirectory = encrDirectory;
             EncrDirectoryPath = encrDirectory.DirectoryPath;
@@ -68,7 +68,7 @@ namespace HelixSync
 
         public HelixEncrDirectory EncrDirectory { get; private set; }
         public HelixDecrDirectory DecrDirectory { get; private set; }
-        
+
         /// <summary>
         /// Matches files from Encr, Decr and Log Entry
         /// </summary>
@@ -83,10 +83,10 @@ namespace HelixSync
             //todo: filter out log entries where the decr file name and the encr file name does not match
             IEnumerable<SyncLogEntry> syncLog = !DecrDirectory.IsOpen ? (IEnumerable<SyncLogEntry>)new List<SyncLogEntry>() : DecrDirectory.SyncLog;
             List<PreSyncDetails> preSyncDetails = new List<PreSyncDetails>();
-            
+
             //Adds Logs
             preSyncDetails.AddRange(syncLog.Select(entry => new PreSyncDetails { LogEntry = entry }));
-            
+
             //Updates/Adds Decrypted File Information
             var decrJoin = decrDirectoryFiles
                 .GroupJoin(preSyncDetails,
@@ -117,9 +117,9 @@ namespace HelixSync
 
             //Updates/adds encrypted File Information
             var encrJoin = encrDirectoryFiles
-                .GroupJoin(preSyncDetails, 
-                    o => o.FileName, 
-                    i => i.EncrFileName, 
+                .GroupJoin(preSyncDetails,
+                    o => o.FileName,
+                    i => i.EncrFileName,
                     (o, i) => new Tuple<FileEntry, PreSyncDetails>(o, i.FirstOrDefault()));
             foreach (var entry in encrJoin.ToList())
             {
@@ -221,7 +221,7 @@ namespace HelixSync
 
                 //NoDependents.Remove(child);
             };
-            
+
             foreach (var item in list)
             {
                 if (item.DisplayOperation == PreSyncOperation.Add)
@@ -241,7 +241,7 @@ namespace HelixSync
                         }
                     }
 
-                   
+
                     {   //adds same case deletes (if exists)
                         if (fileNameUpperIndex.TryGetValue(item.DecrFileName.ToUpperInvariant(), out var parents))
                         {
@@ -269,7 +269,7 @@ namespace HelixSync
                             }
                         }
                     }
-                    
+
                     if (!DependChildToParent.ContainsKey(item))
                         NoDependents.Add(item);
                 }
@@ -312,7 +312,7 @@ namespace HelixSync
 
             if (DependChildToParent.Count > 0)
                 throw new Exception("Unexpected circular reference found when sorting presyncdetails");
-            
+
             return outputList;
         }
 
@@ -383,6 +383,15 @@ namespace HelixSync
             {
                 encrChanged = true;
             }
+            else if (EncrInfo == null && LogEntry.EntryType == FileEntryType.Removed)
+            {
+                //encrChanged to purge
+                encrChanged = true;
+            }
+            else if (EncrInfo == null)
+            {
+                throw new NotImplementedException($"EncrInfo is null. {preSyncDetails.DiagnosticString()}");
+            }
             else if (LogEntry.EncrFileName == EncrInfo.FileName
                 && LogEntry.EncrModified == EncrInfo.LastWriteTimeUtc)
             {
@@ -394,17 +403,17 @@ namespace HelixSync
 
             if (encrChanged == false && decrChanged == false)
             {
-                
                 preSyncDetails.SyncMode = PreSyncMode.Unchanged;
             }
             else if (encrChanged == true && decrChanged == true)
             {
-                if (preSyncDetails.DecrInfo.EntryType == FileEntryType.Removed && preSyncDetails.EncrHeader == null)
+                if ((preSyncDetails.DecrInfo?.EntryType ?? FileEntryType.Removed) == FileEntryType.Removed
+                    && preSyncDetails.EncrHeader == null)
                 {
                     preSyncDetails.SyncMode = PreSyncMode.Match;
                 }
                 else if (preSyncDetails.DecrInfo?.LastWriteTimeUtc == preSyncDetails.EncrHeader?.LastWriteTimeUtc
-                    && preSyncDetails.DecrInfo.EntryType == preSyncDetails.EncrHeader.EntryType)
+                    && (preSyncDetails.DecrInfo?.EntryType ?? FileEntryType.Removed) == preSyncDetails.EncrHeader?.EntryType)
                 {
                     preSyncDetails.SyncMode = PreSyncMode.Match; //Both changed however still match
                 }
@@ -438,7 +447,7 @@ namespace HelixSync
                     preSyncDetails.DisplayOperation = PreSyncOperation.Remove;
                 else if (preSyncDetails.EncrInfo == null || preSyncDetails.EncrInfo.EntryType == FileEntryType.Removed)
                     preSyncDetails.DisplayOperation = PreSyncOperation.Add;
-                else if(preSyncDetails.EncrHeader?.EntryType == FileEntryType.Removed)
+                else if (preSyncDetails.EncrHeader?.EntryType == FileEntryType.Removed)
                     preSyncDetails.DisplayOperation = PreSyncOperation.Add;
                 else
                     preSyncDetails.DisplayOperation = PreSyncOperation.Change;
@@ -447,10 +456,17 @@ namespace HelixSync
             {
                 preSyncDetails.DisplayEntryType = preSyncDetails.EncrHeader?.EntryType ?? FileEntryType.Removed;
                 preSyncDetails.DisplayFileLength = preSyncDetails.EncrHeader?.Length ?? preSyncDetails.DecrInfo?.Length ?? 0;
-                
-                if (preSyncDetails.EncrInfo == null || preSyncDetails.EncrInfo.EntryType == FileEntryType.Removed) 
+
+                if ((preSyncDetails.EncrInfo?.EntryType == FileEntryType.Removed || preSyncDetails.EncrInfo?.EntryType == null)
+                     && preSyncDetails.LogEntry.EntryType == FileEntryType.Removed)
+                {
+                    preSyncDetails.DisplayEntryType = FileEntryType.Purged;
+                    preSyncDetails.DisplayFileLength = 0;
+                    preSyncDetails.DisplayOperation = PreSyncOperation.Purge;
+                }
+                else if (preSyncDetails.EncrInfo == null || preSyncDetails.EncrInfo.EntryType == FileEntryType.Removed)
                     preSyncDetails.DisplayOperation = PreSyncOperation.Remove;
-                else if(preSyncDetails.EncrHeader?.EntryType == FileEntryType.Removed)
+                else if (preSyncDetails.EncrHeader?.EntryType == FileEntryType.Removed)
                     preSyncDetails.DisplayOperation = PreSyncOperation.Remove;
                 else if (preSyncDetails.DecrInfo == null || preSyncDetails.DecrInfo.EntryType == FileEntryType.Removed)
                     preSyncDetails.DisplayOperation = PreSyncOperation.Add;
@@ -466,15 +482,15 @@ namespace HelixSync
             }
             else
             {
-                preSyncDetails.DisplayEntryType = preSyncDetails.DecrInfo.EntryType;
+                preSyncDetails.DisplayEntryType = preSyncDetails.DecrInfo?.EntryType ?? FileEntryType.Removed;
                 preSyncDetails.DisplayFileLength = preSyncDetails.DecrInfo?.Length ?? preSyncDetails.EncrHeader?.Length ?? 0;
 
                 preSyncDetails.DisplayOperation = PreSyncOperation.Error;
             }
 
         }
-        
-        
+
+
         /// <summary>
         /// Refreshes the contents of the preSyncDetails using the file system (in case the file system has changed since last retrieved)
         /// </summary>
@@ -487,7 +503,7 @@ namespace HelixSync
 
             if (string.IsNullOrEmpty(preSyncDetails.EncrFileName))
                 preSyncDetails.EncrFileName = EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.DecrFileName);
-            
+
             preSyncDetails.EncrInfo = FileEntry.FromFile(Path.Combine(EncrDirectory.DirectoryPath, preSyncDetails.EncrFileName),
                                                         EncrDirectory.DirectoryPath);
             RefreshPreSyncEncrHeader(preSyncDetails);
@@ -558,7 +574,7 @@ namespace HelixSync
                 if (logEntry?.ToString() == fileSystemEntry?.ToString())
                     return SyncResults.Skipped(); //Unchanged
 
-                
+
                 string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(entry.EncrFileName));
                 string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(entry.DecrFileName));
                 FileEncryptOptions options = new FileEncryptOptions();
@@ -577,29 +593,39 @@ namespace HelixSync
             }
             else if (entry.SyncMode == PreSyncMode.EncryptedSide)
             {
-                SyncLogEntry logEntry = entry.LogEntry;
-                SyncLogEntry fileSystemEntry = CreateNewLogEntryFromEncrPath(entry.EncrFileName);
-                if (logEntry?.ToString() == fileSystemEntry?.ToString())
-                    return SyncResults.Success(); //Unchanged
-
-                //todo: test to see if there are illegal characters
-                //todo: check if the name matches
-
-                string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.EncrFileName));
-                string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.DecrFileName));
-
-                //todo: if file exists with different case - skip file
-                var exactPath = HelixUtil.GetExactPathName(decrPath);
-                if (File.Exists(decrPath) && HelixUtil.GetExactPathName(decrPath) != decrPath)
+                if (entry.DisplayOperation == PreSyncOperation.Purge)
                 {
-                    //todo: throw more specific exception
-                    return SyncResults.Failure(new HelixException($"Case only conflict file \"{decrPath}\" exists as \"{exactPath}\"."));
+                    SyncLog.Add(entry.GetUpdatedLogEntry());
+                    return SyncResults.Success();
                 }
-                HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
-                //todo: get the date on the file system (needed if the filesystem has less percission
+                else 
+                {
+                    //todo: use the DisplayOperation to determine what to do (ensures the counts stay consistant)
+                    
+                    SyncLogEntry logEntry = entry.LogEntry;
+                    SyncLogEntry fileSystemEntry = CreateNewLogEntryFromEncrPath(entry.EncrFileName);
+                    if (logEntry?.ToString() == fileSystemEntry?.ToString())
+                        return SyncResults.Success(); //Unchanged
 
-                SyncLog.Add(fileSystemEntry);
-                return SyncResults.Success();
+                    //todo: test to see if there are illegal characters
+                    //todo: check if the name matches
+
+                    string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.EncrFileName));
+                    string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.DecrFileName));
+
+                    //todo: if file exists with different case - skip file
+                    var exactPath = HelixUtil.GetExactPathName(decrPath);
+                    if (File.Exists(decrPath) && HelixUtil.GetExactPathName(decrPath) != decrPath)
+                    {
+                        //todo: throw more specific exception
+                        return SyncResults.Failure(new HelixException($"Case only conflict file \"{decrPath}\" exists as \"{exactPath}\"."));
+                    }
+                    HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
+                    //todo: get the date on the file system (needed if the filesystem has less percission
+
+                    SyncLog.Add(fileSystemEntry);
+                    return SyncResults.Success();
+                }
             }
             else if (entry.SyncMode == PreSyncMode.Match || entry.SyncMode == PreSyncMode.Unchanged)
             {
