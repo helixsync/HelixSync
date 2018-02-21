@@ -262,17 +262,17 @@ namespace HelixSync
                         .GetProperties()
                         .Where(p => string.Equals(argName, p.Name, StringComparison.OrdinalIgnoreCase)
                                 || string.Equals(argName,
-                                                 p.GetCustomAttributes<ArgumentAttribute>().FirstOrDefault()?.ShortName,
+                                                 p.GetCustomAttribute<ArgumentAttribute>()?.ShortName,
                                                  StringComparison.OrdinalIgnoreCase))
                         .FirstOrDefault();
 
                     if (propertyInfo == null)
-                        throw new ArgumentParseException("Invalid Option " + arg);
+                        throw new ArgumentParseException("Unrecognised Option " + arg);
 
                     if (propertyInfo.PropertyType == typeof(string))
                     {
                         if (!string.IsNullOrEmpty(argOpt))
-                            throw new ArgumentParseException("Invalid Option " + arg);
+                            throw new ArgumentParseException("Invalid Option " + arg + ", value is required");
 
                         if (args.Length <= i + 1)
                             throw new ArgumentParseException("Expecting a value after the argument " + arg);
