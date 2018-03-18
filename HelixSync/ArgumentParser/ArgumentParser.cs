@@ -55,7 +55,7 @@ namespace HelixSync
             public string ValuePlaceholder => propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.ValuePlaceholder ?? "value";
 
 
-            public string UsageString(bool? shortName = null, bool dualPattern = false) 
+            public string UsageString(bool? shortName = null, bool dualPattern = false)
             {
                 if (dualPattern && !string.IsNullOrEmpty(this.ShortName))
                 {
@@ -63,7 +63,7 @@ namespace HelixSync
                 }
 
 
-                shortName = shortName ??  PreferShortName;
+                shortName = shortName ?? PreferShortName;
                 string usageString = "";
                 if (shortName == true)
                     usageString += $"-{ShortName}";
@@ -107,7 +107,8 @@ namespace HelixSync
             sb.AppendLine("= Options =");
             sb.AppendLine(UsageOptions(type, advanced));
             sb.AppendLine();
-            if(advanced) {
+            if (advanced)
+            {
                 sb.AppendLine("= Advanced =");
                 sb.AppendLine(UsageAdvanced(type));
                 sb.AppendLine();
@@ -306,9 +307,24 @@ namespace HelixSync
                         string[] newValue = (originalValue ?? new string[] { }).Concat(new string[] { val }).ToArray();
                         propertyInfo.SetValue(optionsObj, newValue);
                     }
+                    else if (propertyInfo.PropertyType.IsEnum)
+                    {
+                        if (!string.IsNullOrEmpty(argOpt))
+                            throw new ArgumentParseException("Invalid Option " + arg);
+                        if (args.Length <= i + 1)
+                            throw new ArgumentParseException("Expecting a value after the argument " + arg);
+
+                        i++;
+                        string val = args[i];
+                        object parsedValue;
+                        if (!Enum.TryParse(propertyInfo.PropertyType, val, out parsedValue))
+                        {
+                            throw new ArgumentParseException($"Invalid selection for argument {arg}, should be one of the following values: {string.Join(",", Enum.GetNames(propertyInfo.PropertyType))}");
+                        }
+                    }
                     else
                     {
-                        throw new ArgumentParseException("Unsupported Option " + arg);
+                        throw new ArgumentParseException($"Error with option {arg}, option Type {propertyInfo.PropertyType.Name} not supported.");
                     }
 
                 }
