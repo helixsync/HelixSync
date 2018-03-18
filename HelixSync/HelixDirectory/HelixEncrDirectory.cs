@@ -158,6 +158,8 @@ namespace HelixSync
                     continue;
                 if (Path.GetExtension(fileName) == HelixConsts.StagedHxExtention)
                     continue;
+                if (Path.GetExtension(fileName) == HelixConsts.BackupExtention)
+                    continue;
                 if (fileEntry.EntryType != FileEntryType.File)
                     continue;
 
