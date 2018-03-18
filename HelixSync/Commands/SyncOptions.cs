@@ -34,6 +34,9 @@ namespace HelixSync
         [Description("Path to a key file. Allowed multiple values")]
         public string[] KeyFile { get; set; }
 
+        [Argument(Recommended=true)]
+        public Verbosity Verbosity {get; set;}
+        
         public override string ToString()
         {
             return string.Format("[SyncOptions: DecrDirectory={0}, EncrDirectory={1}, Password={2}]", DecrDirectory, EncrDirectory, Password);
