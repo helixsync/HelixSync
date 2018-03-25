@@ -35,7 +35,7 @@ namespace HelixSync
         public string[] KeyFile { get; set; }
 
         [Argument(Recommended=true)]
-        public Verbosity Verbosity {get; set;}
+        public VerbosityLevel Verbosity {get; set;}
         
         public override string ToString()
         {
