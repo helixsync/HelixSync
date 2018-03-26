@@ -12,7 +12,7 @@ namespace HelixSync
     {
         public static int Sync(SyncOptions options, ConsoleEx consoleEx = null, HelixFileVersion fileVersion = null)
         {
-            consoleEx = consoleEx ?? new ConsoleEx();
+            consoleEx = consoleEx ?? new ConsoleEx(options.Verbosity);
             consoleEx.WriteLine("------------------------");
             consoleEx.WriteLine("-- HelixSync " + typeof(SyncCommand).GetTypeInfo().Assembly.GetName().Version.ToString());
             consoleEx.WriteLine("------------------------");

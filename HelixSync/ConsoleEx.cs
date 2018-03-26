@@ -11,6 +11,13 @@ namespace HelixSync
 {
     public class ConsoleEx
     {
+        public readonly VerbosityLevel Verbosity;
+
+        public ConsoleEx(VerbosityLevel verbosity = VerbosityLevel.Detailed)
+        {
+            this.Verbosity = verbosity;
+        }
+
         /// <summary>
         /// Indicates if the user has the ability to respond to console prompts
         /// </summary>
@@ -35,13 +42,22 @@ namespace HelixSync
         public void WriteErrorLine()
         {
             BeforeWriteErrorLine?.Invoke(null);
-            Console.Error.WriteLine(); 
+            Console.Error.WriteLine();
         }
-        
+
         public void WriteErrorLine(object value)
         {
             BeforeWriteErrorLine?.Invoke(value);
             Console.Error.WriteLine(value);
+        }
+
+        public void WriteLine(VerbosityLevel level, int indent, object value)
+        {
+            if (this.Verbosity >= level)
+            {
+                BeforeWriteLine?.Invoke(value);
+                Console.WriteLine($"{new string(' ', indent*2)}{value}");
+            }
         }
 
         public Action<object> BeforeWriteLine { get; set; }
@@ -60,7 +76,7 @@ namespace HelixSync
                 Console.Write(prompt);
                 string value = Console.ReadLine() ?? "";
                 value = value.ToUpper().Trim();
-                if (value == "Y" || value == "YES" || value=="T" || value == "TRUE")
+                if (value == "Y" || value == "YES" || value == "T" || value == "TRUE")
                     return true;
                 if (value == "N" || value == "NO" || value == "F" || value == "FALSE")
                     return false;
@@ -68,7 +84,5 @@ namespace HelixSync
                     return (bool)defaultValue;
             }
         }
-
-
     }
 }

@@ -35,7 +35,7 @@ namespace HelixSync
             DecrDirectory = decrDirectory;
         }
 
-        public static DirectoryPair Open(string encrDirectoryPath, string decrDirectoryPath, DerivedBytesProvider derivedBytesProvider, bool initialize=false, HelixFileVersion fileVersion = null)
+        public static DirectoryPair Open(string encrDirectoryPath, string decrDirectoryPath, DerivedBytesProvider derivedBytesProvider, bool initialize = false, HelixFileVersion fileVersion = null)
         {
             if (derivedBytesProvider == null)
                 throw new ArgumentNullException(nameof(derivedBytesProvider));
@@ -183,8 +183,11 @@ namespace HelixSync
             foreach (var item in list)
             {
                 var fileName = item.DecrFileName;
-                var fileNameUpper = item.DecrFileName.ToUpperInvariant();
+                var fileNameUpper = item.DecrFileName?.ToUpperInvariant();
                 var parent = Path.GetDirectoryName(item.DecrFileName);
+
+                if (string.IsNullOrEmpty(item.DecrFileName))
+                    throw new Exception("DecrFileName null, " + item.DiagnosticString());
 
                 if (fileNameIndex.ContainsKey(fileName))
                     fileNameIndex[fileName].Add(item);
@@ -260,7 +263,7 @@ namespace HelixSync
                 {
                     if (fileNameParentIndex.TryGetValue(item.DecrFileName, out var childFiles))
                     {
-                        foreach(var childFile in childFiles)
+                        foreach (var childFile in childFiles)
                         {
                             if (childFile.DisplayOperation == PreSyncOperation.Remove)
                             {
@@ -296,7 +299,7 @@ namespace HelixSync
                 //clear dependents, adds to the NoDependents list if posible
                 if (DependParentToChild.TryGetValue(next, out var children))
                 {
-                    foreach(var child in children)
+                    foreach (var child in children)
                     {
                         DependChildToParent[child].Remove(next);
                         if (DependChildToParent[child].Count == 0)
@@ -390,7 +393,7 @@ namespace HelixSync
             }
             else if (EncrInfo == null)
             {
-                throw new NotImplementedException($"EncrInfo is null. {preSyncDetails.DiagnosticString()}");
+                throw new NotImplementedException($"EncrInfo is null. {preSyncDetails.DiagnosticString()}\ndecrChanged: {decrChanged}");
             }
             else if (LogEntry.EncrFileName == EncrInfo.FileName
                 && LogEntry.EncrModified == EncrInfo.LastWriteTimeUtc)
@@ -598,10 +601,10 @@ namespace HelixSync
                     SyncLog.Add(entry.GetUpdatedLogEntry());
                     return SyncResults.Success();
                 }
-                else 
+                else
                 {
                     //todo: use the DisplayOperation to determine what to do (ensures the counts stay consistant)
-                    
+
                     SyncLogEntry logEntry = entry.LogEntry;
                     SyncLogEntry fileSystemEntry = CreateNewLogEntryFromEncrPath(entry.EncrFileName);
                     if (logEntry?.ToString() == fileSystemEntry?.ToString())
