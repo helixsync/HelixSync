@@ -142,6 +142,41 @@ namespace HelixSync
         }
 
 
+        public void Cleanup(ConsoleEx console)
+        {
+            console.WriteLine(VerbosityLevel.Normal, 0, "Performing Cleanup...");
+
+            List<FileEntry> decrDirectoryFiles = DecrDirectory.GetAllEntries().ToList();
+            List<FileEntry> encrDirectoryFiles = EncrDirectory.GetAllEntries().ToList();
+
+
+            foreach(var file in new DirectoryInfo(EncrDirectory.DirectoryPath).GetFiles()
+                                        .Where(f => string.Equals(Path.GetExtension(f.FullName), HelixConsts.StagedHxExtention)))
+            {
+                console.WriteLine(VerbosityLevel.Detailed, 1, $"Removing staged file {file.FullName}");
+                file.Delete();
+            }
+
+            
+            foreach(var file in new DirectoryInfo(EncrDirectory.DirectoryPath).GetFiles()
+                                        .Where(f => string.Equals(Path.GetExtension(f.FullName), HelixConsts.BackupExtention)))
+            {
+                var destination = Path.ChangeExtension(file.FullName, "");
+                console.WriteLine(VerbosityLevel.Detailed, 1, $"Incomplete file, restoring backup {file.FullName} => {destination}");
+                if (File.Exists(destination))
+                {
+                    console.WriteLine(VerbosityLevel.Diagnostic, 2, $"Removing {destination}");
+                    File.Delete(destination);
+                }
+
+                console.WriteLine(VerbosityLevel.Diagnostic, 2, $"Renaming {Path.GetFileName(file.FullName)} to {Path.GetFileName(destination)}");
+                file.MoveTo(destination);              
+            }
+
+            console.WriteLine(VerbosityLevel.Detailed, 1, "Cleanup Complete");
+        }
+
+
         /// <summary>
         /// Returns a list of changes that need to be performed as part of the sync.
         /// </summary>

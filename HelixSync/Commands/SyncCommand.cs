@@ -162,6 +162,8 @@ namespace HelixSync
                     consoleEx.WriteLine("Key: [+] Add  [-] Remove  [c] Change  [x] Drop Delete Stub");
                     consoleEx.WriteLine("");
 
+                    pair.Cleanup(consoleEx);
+
                     List<PreSyncDetails> changes = pair.FindChanges();
                     
                     if (changes.Count == 0)
