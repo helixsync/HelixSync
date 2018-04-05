@@ -36,8 +36,8 @@ namespace HelixSync.Test
                 File.WriteAllText(@"AA\A1\A2", "xx");
                 File.WriteAllText(@"AA\AA", "aa");
                 File.WriteAllText(@"AA\ABCDEFGHIJKLMNOP", "Long File Name");
-                //todo: decide what to do with dos paths
 
+                if (File.Exists(@"aa\ABCDEF~1")) //only tests on certain file systems with DOS 8.3 name support
                 {
                     var exactPath = HelixUtil.GetExactPathName(@"aa\ABCDEF~1");
                     Assert.Equal(@"AA\ABCDEFGHIJKLMNOP", exactPath);
