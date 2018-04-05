@@ -10,8 +10,6 @@ namespace HelixSync
     {
         public Action<FileEntry, FileDecryptOptions> AfterMetadataRead { get; set; }
 
-        public Logger Log { get; set; }
-
         public FileDecryptOptions Clone()
         {
             return this.MemberwiseClone() as FileDecryptOptions;

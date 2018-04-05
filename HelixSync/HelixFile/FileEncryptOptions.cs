@@ -9,8 +9,8 @@ namespace HelixSync
     public class FileEncryptOptions
     {
         public Action<FileEntry> BeforeWriteHeader { get; set; }
-        public Logger Log { get; set; }
         public HelixFileVersion FileVersion { get; set; }
         public string StoredFileName { get; set; }
+        public Action<string> Log { get; set; }
     }
 }

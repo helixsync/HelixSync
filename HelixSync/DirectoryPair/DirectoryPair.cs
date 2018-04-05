@@ -561,7 +561,7 @@ namespace HelixSync
 
         public const int encrTimespanPrecisionMS = 1000;
 
-        public SyncResults TrySync(PreSyncDetails entry)
+        public SyncResults TrySync(PreSyncDetails entry, ConsoleEx console = null)
         {
             //todo: ensure the entry direction and operation end up being the same
             //todo: ensure all the calling methods do something with the results
@@ -587,6 +587,8 @@ namespace HelixSync
                 options.BeforeWriteHeader = (h) => header = h;
                 options.StoredFileName = entry.DecrFileName;
                 options.FileVersion = EncrDirectory.Header.FileVersion;
+                options.Log = (s) => console?.WriteLine(VerbosityLevel.Diagnostic, 1, s);
+
                 HelixFile.Encrypt(decrPath, encrPath, EncrDirectory.DerivedBytesProvider, options);
                 if (logEntry != null && (File.GetLastWriteTimeUtc(encrPath) - logEntry.EncrModified).TotalMilliseconds < encrTimespanPrecisionMS)
                 {

@@ -224,7 +224,7 @@ namespace HelixSync
 
                         if (!options.WhatIf)
                         {
-                            var syncResult = pair.TrySync(change);
+                            var syncResult = pair.TrySync(change, consoleEx);
                             //todo: add to error log
                             if (syncResult.Exception != null)
                                 consoleEx.WriteErrorLine("..." + syncResult.Exception.Message);

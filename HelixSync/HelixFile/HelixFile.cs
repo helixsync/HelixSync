@@ -28,8 +28,6 @@ namespace HelixSync
             var encrStagedFileName = encrFilePath + HelixConsts.StagedHxExtention;
             var encrBackupFileName = encrFilePath + HelixConsts.BackupExtention;
 
-            CleanupFile(encrFilePath, options.Log);
-
             if (!string.IsNullOrEmpty(Path.GetDirectoryName(encrStagedFileName)))
                 Directory.CreateDirectory(Path.GetDirectoryName(encrStagedFileName));
 
@@ -43,11 +41,11 @@ namespace HelixSync
             using (var streamOut = File.Open(encrStagedFileName, FileMode.CreateNew, FileAccess.Write))
             using (var encryptor = new HelixFileEncryptor(streamOut, derivedBytesProvider, options.FileVersion))
             {
-                options.Log?.Debug("Writing: Header");
+                options.Log?.Invoke("Writing: Header");
                 options.BeforeWriteHeader?.Invoke(header);
                 encryptor.WriteHeader(header);
 
-                options.Log?.Debug("Writing: Content");
+                options.Log?.Invoke("Writing: Content");
                 encryptor.WriteContent(streamIn, streamIn.Length);
             }
 
@@ -56,22 +54,22 @@ namespace HelixSync
             {
                 if (File.Exists(encrBackupFileName))
                 {
-                    options.Log?.Debug("Destaging: Removing incomplete backup");
+                    options.Log?.Invoke("Destaging: Removing incomplete backup");
                     File.Delete(encrBackupFileName);
                 }
 
-                options.Log?.Debug("Destaging: Moving staged to normal");
+                options.Log?.Invoke("Destaging: Moving staged to normal");
                 
                 if (File.Exists(encrFilePath))
                     File.Move(encrFilePath, encrBackupFileName);
                 File.Move(encrStagedFileName, encrFilePath);
                 
-                options.Log?.Debug("Destaging: Removing backup");
+                options.Log?.Invoke("Destaging: Removing backup");
                 File.Delete(encrBackupFileName);
             }
             else
             {
-                options.Log?.Debug("Destaging: Moving staged to normal");
+                options.Log?.Invoke("Destaging: Moving staged to normal");
                 File.Move(encrStagedFileName, encrFilePath);
             }
         }
@@ -91,9 +89,6 @@ namespace HelixSync
                 throw new ArgumentNullException(nameof(derivedBytesProvider));
             
             options = options ?? new FileDecryptOptions();
-
-            CleanupFile(encrPath, options.Log);
-            CleanupFile(decrPath, options.Log);
 
             using (FileStream inputStream = File.OpenRead(encrPath))
             using (HelixFileDecryptor decryptor = new HelixFileDecryptor(inputStream))
@@ -194,37 +189,6 @@ namespace HelixSync
                     throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
                 }
             }
-        }
-
-        /// <summary>
-        /// Cleans up staging, backup files
-        /// </summary>
-        public static void CleanupFile(string filePath, Logger log = null)
-        {
-            if (filePath.EndsWith(HelixConsts.BackupExtention, StringComparison.OrdinalIgnoreCase))
-                filePath = filePath.Substring(0, filePath.Length - HelixConsts.BackupExtention.Length);
-            else if (filePath.EndsWith(HelixConsts.StagedHxExtention, StringComparison.OrdinalIgnoreCase))
-                filePath = filePath.Substring(0, filePath.Length - HelixConsts.StagedHxExtention.Length);
-
-            var stagedFileName = filePath + HelixConsts.StagedHxExtention;
-            var backupFileName = filePath + HelixConsts.BackupExtention;
-
-            if (File.Exists(stagedFileName))
-            {
-                log?.Debug("Cleanup: Removing incomplete staging file");
-                File.Delete(stagedFileName);
-            }
-
-            if (File.Exists(filePath))
-            {
-                if (File.Exists(backupFileName))
-                    File.Delete(backupFileName);
-            }
-            else if (File.Exists(backupFileName))
-            {
-                File.Move(backupFileName, filePath);
-            }
-
         }
     }
 }
