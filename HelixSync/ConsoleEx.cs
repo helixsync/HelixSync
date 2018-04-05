@@ -11,9 +11,9 @@ namespace HelixSync
 {
     public class ConsoleEx
     {
-        public readonly VerbosityLevel Verbosity;
+        public VerbosityLevel Verbosity { get; set; }
 
-        public ConsoleEx(VerbosityLevel verbosity = VerbosityLevel.Detailed)
+        public ConsoleEx(VerbosityLevel verbosity = VerbosityLevel.Normal)
         {
             this.Verbosity = verbosity;
         }
@@ -53,7 +53,7 @@ namespace HelixSync
 
         public void WriteLine(VerbosityLevel level, int indent, object value)
         {
-            if (this.Verbosity >= level)
+            if ((int)this.Verbosity >= (int)level)
             {
                 BeforeWriteLine?.Invoke(value);
                 Console.WriteLine($"{new string(' ', indent*2)}{value}");
