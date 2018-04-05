@@ -321,6 +321,8 @@ namespace HelixSync
                         {
                             throw new ArgumentParseException($"Invalid selection for argument {arg}, should be one of the following values: {string.Join(",", Enum.GetNames(propertyInfo.PropertyType))}");
                         }
+
+                        propertyInfo.SetValue(optionsObj, parsedValue);
                     }
                     else
                     {

@@ -42,5 +42,29 @@ namespace HelixSync.Test
                 Assert.Equal("c", obj.Value3);
             }
         }
+
+        public enum EnumDefinition
+        {
+            One,
+            Two,
+            Three,
+        }
+        public class EnumClass
+        {
+            [Argument]
+            public EnumDefinition EnumValue {get;set;}
+        }
+
+        [Fact]
+        public void ParseCommandLineArguments_EnumValue() 
+        {
+            {
+                var obj = new EnumClass();
+                ArgumentParser.ParseCommandLineArguments(obj, new string[] { "--EnumValue", "Three" });
+                Assert.Equal(EnumDefinition.Three, obj.EnumValue);
+            }
+        }
+
+
     }
 }

@@ -20,10 +20,12 @@ namespace HelixSync
             consoleEx.WriteLine();
 
             consoleEx.WriteLine("Sync");
-            consoleEx.WriteLine("..DecrDir: " + options.DecrDirectory);
-            consoleEx.WriteLine("..EncrDir: " + options.EncrDirectory);
+            consoleEx.WriteLine($"..DecrDir: {options.DecrDirectory}");
+            consoleEx.WriteLine($"..EncrDir: {options.EncrDirectory}");
             if (options.WhatIf)
                 consoleEx.WriteLine("..Options: WhatIf");
+            consoleEx.WriteLine($"..Verbosity: {options.Verbosity}");
+
             consoleEx.WriteLine();
 
             if (options.WhatIf)
