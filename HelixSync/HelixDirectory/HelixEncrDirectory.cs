@@ -7,22 +7,28 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HelixSync.FileSystem;
 
-namespace HelixSync
+namespace HelixSync.HelixDirectory
 {
     public class HelixEncrDirectory : IDisposable
     {
-        public HelixEncrDirectory(string directoryPath)
+        public HelixEncrDirectory(string directoryPath, bool whatIf = false)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
                 throw new ArgumentNullException(nameof(directoryPath));
 
             this.DirectoryPath = HelixUtil.PathNative(directoryPath);
+            this.WhatIf = whatIf;
+            this.FSDirectory = new FSDirectory(directoryPath, whatIf);
         }
+
+        public FSDirectory FSDirectory { get; private set; }
 
         public FileNameEncoder FileNameEncoder { get; private set; }
         public DerivedBytesProvider DerivedBytesProvider { get; private set; }
         public string DirectoryPath { get; private set; }
+        public bool WhatIf { get; }
 
         public Action<string> DebugLog { get; set; }
 
@@ -134,14 +140,11 @@ namespace HelixSync
         }
 
         /// <summary>
-        /// Removes extra and temporary files
+        /// Removes extra and temporary files, restores backups for partial files
         /// </summary>
-        public void Clean()
+        public void Cleanup(ConsoleEx console)
         {
-            foreach (string file in Directory.GetFiles(DirectoryPath, Path.ChangeExtension("*", HelixConsts.StagedHxExtention)))
-                HelixFile.CleanupFile(file);
-            foreach (string file in Directory.GetFiles(DirectoryPath, Path.ChangeExtension("*", HelixConsts.BackupExtention)))
-                HelixFile.CleanupFile(file);
+            FSDirectory.Cleanup(console);
         }
 
         public IEnumerable<FileEntry> GetAllEntries()

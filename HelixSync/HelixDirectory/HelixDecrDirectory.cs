@@ -7,18 +7,20 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HelixSync.FileSystem;
 
-namespace HelixSync
+namespace HelixSync.HelixDirectory
 {
     public class HelixDecrDirectory : IDisposable
     {
-        public HelixDecrDirectory(string directoryPath, string encrDirectoryId = null)
+        public HelixDecrDirectory(string directoryPath, string encrDirectoryId = null, bool whatIf = false)
         {
             if (string.IsNullOrWhiteSpace(directoryPath))
                 throw new ArgumentNullException(nameof(directoryPath));
 
             this.DirectoryPath = HelixUtil.PathNative(directoryPath);
             this.EncrDirectoryId = encrDirectoryId;
+            this.FSDirectory = new FSDirectory(directoryPath, whatIf);
         }
 
         string m_EncrDirectoryId = null;
@@ -33,7 +35,8 @@ namespace HelixSync
             }
         }
 
-        public string DirectoryPath { get; private set; }
+        public FSDirectory FSDirectory { get; }
+        public string DirectoryPath { get; }
         public SyncLog SyncLog { get; private set; }
 
         private string GetSyncLogPath()
@@ -157,14 +160,11 @@ namespace HelixSync
         }
 
         /// <summary>
-        /// Removes extra and temporary files
+        /// Removes extra and temporary files, restores backups for partial files
         /// </summary>
-        public void Clean()
+        public void Cleanup(ConsoleEx console)
         {
-            foreach (string file in Directory.GetFiles(DirectoryPath, Path.ChangeExtension("*", HelixConsts.StagedHxExtention)))
-                HelixFile.CleanupFile(file);
-            foreach (string file in Directory.GetFiles(DirectoryPath, Path.ChangeExtension("*", HelixConsts.BackupExtention)))
-                HelixFile.CleanupFile(file);
+            FSDirectory.Cleanup(console);
         }
 
         public void Dispose()

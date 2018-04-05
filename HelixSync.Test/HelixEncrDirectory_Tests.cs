@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 using Xunit;
+using HelixSync.HelixDirectory;
 
 namespace HelixSync.Test
 {
@@ -45,7 +46,7 @@ namespace HelixSync.Test
 
             HelixEncrDirectory helixDirectory2 = new HelixEncrDirectory("hxdir");
             helixDirectory2.Open(DerivedBytesProvider.FromPassword("password"));
-            helixDirectory2.Clean();
+            helixDirectory2.Cleanup(null);
         }
     }
 }

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HelixSync.Commands;
 
 namespace HelixSync
 {
@@ -13,6 +14,7 @@ namespace HelixSync
             ("help", typeof(HelpOptions), (o, c) => HelpCommand.Help((HelpOptions)o, c)),
             ("sync", typeof(SyncOptions),  (o, c) => SyncCommand.Sync((SyncOptions)o, c)),
             ("inspect", typeof(InspectOptions),  (o, c) => InspectCommand.Inspect((InspectOptions)o, c)),
+            ("cleanup", typeof(CleanupOptions), (o, c) => CleanupCommand.Cleanup((CleanupOptions)o, c)),
         };
 
         public static int Invoke(string[] args, ConsoleEx consoleEx = null)

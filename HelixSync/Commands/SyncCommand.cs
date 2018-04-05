@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using HelixSync.HelixDirectory;
 
 namespace HelixSync
 {
@@ -29,8 +30,8 @@ namespace HelixSync
                 consoleEx.WriteLine("** WhatIf Mode - No Changes Made **");
 
 
-            using (HelixEncrDirectory encrDirectory = new HelixEncrDirectory(options.EncrDirectory))
-            using (HelixDecrDirectory decrDirectory = new HelixDecrDirectory(options.DecrDirectory))
+            using (HelixEncrDirectory encrDirectory = new HelixEncrDirectory(options.EncrDirectory, options.WhatIf))
+            using (HelixDecrDirectory decrDirectory = new HelixDecrDirectory(options.DecrDirectory, whatIf: options.WhatIf))
             {
                 DerivedBytesProvider derivedBytesProvider = DerivedBytesProvider.FromPassword(options.Password, options.KeyFile);
 
@@ -162,7 +163,8 @@ namespace HelixSync
                     consoleEx.WriteLine("Key: [+] Add  [-] Remove  [c] Change  [x] Drop Delete Stub");
                     consoleEx.WriteLine("");
 
-                    pair.Cleanup(consoleEx);
+                    encrDirectory.Cleanup(consoleEx);
+                    decrDirectory.Cleanup(consoleEx);
 
                     List<PreSyncDetails> changes = pair.FindChanges();
                     
