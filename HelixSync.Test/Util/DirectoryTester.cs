@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace HelixSync.Test
 {
@@ -17,7 +16,7 @@ namespace HelixSync.Test
     {
         public class DirectoryEntry : IComparable<DirectoryEntry>
         {
-            static Regex patern = new Regex(@"^\s*" + @"(?<filename>[^\:\<]+)" + @"\s*" + @"(\:(?<time>[0-9]*))?" + @"\s*" + @"(\<(?<content>.*))?" + @"\s*" + @"(?<comments>\#.*)?" + "$", RegexOptions.Compiled);
+            static Regex patern = new Regex(@"^\s*" + @"(?<filename>[^\:\<]+)" + @"\s*" + @"(\:(?<time>[0-9\*]*))?" + @"\s*" + @"(\<(?<content>.*))?" + @"\s*" + @"(?<comments>\#.*)?" + "$", RegexOptions.Compiled);
             public DirectoryEntry(string encoded)
             {
                 Match match = patern.Match(encoded);
@@ -29,8 +28,7 @@ namespace HelixSync.Test
                 if (string.IsNullOrWhiteSpace(fileName))
                     throw new ArgumentOutOfRangeException("Unable to Parse Directory Entry -- " + encoded);
 
-                int timeint = 0;
-                int.TryParse(time, out timeint);
+
 
                 fileName = fileName.Trim().Replace('\\', '/');
                 if (fileName.EndsWith("/"))
@@ -41,10 +39,16 @@ namespace HelixSync.Test
 
                 this.FileName = fileName;
                 this.IsDirectory = isDirectory;
-                this.Time = timeint;
-                this.Content = (content ?? "").Trim();
+                if (int.TryParse(time, out int timeint))
+                    this.Time = timeint;
+                else
+                    this.Time = null;
+                if (!match.Groups["content"].Success || (content ?? "").Trim() == "*")
+                    this.Content = null;
+                else
+                    this.Content =  (content ?? "").Trim();
             }
-            public DirectoryEntry(string fileName, bool isDirectory, int time, string content)
+            public DirectoryEntry(string fileName, bool isDirectory, int? time, string content)
             {
                 fileName = fileName.Trim().Replace('\\', '/');
                 this.FileName = fileName;
@@ -56,11 +60,11 @@ namespace HelixSync.Test
             public string Content { get; private set; }
             public string FileName { get; private set; }
             public bool IsDirectory { get; private set; }
-            public int Time { get; private set; }
+            public int? Time { get; private set; }
 
             public override string ToString()
             {
-                return FileName + (IsDirectory ? "/" : "") + ":" + Time.ToString() + (IsDirectory ? "" : " < " + Content);
+                return FileName + (IsDirectory ? "/" : "") + ":" + (Time == null ? "*" : Time.ToString()) + (IsDirectory ? "" : " < " + (Content == null ? "*" : Content));
             }
 
             public override bool Equals(object obj)
@@ -201,8 +205,35 @@ namespace HelixSync.Test
             var shouldBeContent = new DirectoryEntryCollection(content);
             var directoryContent = GetContent();
 
-            if (shouldBeContent.ToString() != directoryContent.ToString())
-                Assert.True(false, message);
+            message = message ?? "Directory contents not equal";
+
+            foreach (var shouldBeItem in shouldBeContent)
+            {
+                var directoryItem = directoryContent.FirstOrDefault(d => d.FileName == shouldBeItem.FileName);
+                if (directoryItem == null)
+                    throw new DirectoryMismatchException($"{message} (missing file {shouldBeItem})");
+                if (shouldBeItem.Time != null && directoryItem.Time != shouldBeItem.Time)
+                    throw new DirectoryMismatchException($"{message} (time stamp mismatch {shouldBeItem} != {directoryItem})");
+                if (shouldBeItem.Content != null && directoryItem.Content != shouldBeItem.Content)
+                    throw new DirectoryMismatchException($"{message} (content mismatch {shouldBeItem} != {directoryItem})");
+                if (shouldBeItem.IsDirectory  != directoryItem.IsDirectory)
+                    throw new DirectoryMismatchException($"{message} (isdirectory mismatch {shouldBeItem} != {directoryItem})");
+            }
+
+            foreach(var directoryItem in directoryContent)
+            {
+                if (!shouldBeContent.Any(e => e.FileName == directoryItem.FileName))
+                {
+                    throw new DirectoryMismatchException($"{message} (extra file {directoryItem})");
+                }
+            }
+        }
+
+        public class DirectoryMismatchException : Exception
+        {
+            public DirectoryMismatchException(string message) : base(message)
+            {
+            }
         }
 
         public DirectoryTester(string path, Regex excludedItems = null, bool cleanupOnDispose = true)
@@ -216,6 +247,11 @@ namespace HelixSync.Test
         public string DirectoryPath { get; private set; }
         public bool CleanupOnDispose { get; private set; }
 
+        /// <summary>
+        /// Updates the directory to match the files and content provided in the content string
+        /// 
+        /// </summary>
+        /// <param name="content">fileName [&gt; content]</param>
         public void UpdateTo(params string[] content)
         {
             DirectoryEntryCollection directoryEntries = new DirectoryEntryCollection(content);
@@ -228,7 +264,7 @@ namespace HelixSync.Test
             foreach (DirectoryEntry entry in directoryEntries)
             {
                 string filePath = Path.Combine(DirectoryPath, entry.FileName).Replace('/', Path.DirectorySeparatorChar);
-                DateTime writeTime = (new DateTime(2010, 1, 1)).AddDays(entry.Time);
+                DateTime writeTime = (new DateTime(2010, 1, 1)).AddDays(entry.Time ?? 0);
                 if (entry.IsDirectory)
                 {
                     Directory.CreateDirectory(filePath);
@@ -247,7 +283,7 @@ namespace HelixSync.Test
             foreach (DirectoryEntry entry in directoryEntries.Where(e => e.IsDirectory))
             {
                 string filePath = Path.Combine(DirectoryPath, entry.FileName).Replace('/', Path.DirectorySeparatorChar);
-                DateTime writeTime = (new DateTime(2010, 1, 1)).AddDays(entry.Time);
+                DateTime writeTime = (new DateTime(2010, 1, 1)).AddDays(entry.Time ?? 0);
                 Directory.SetLastWriteTimeUtc(filePath, writeTime);
             }
         }

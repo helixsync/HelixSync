@@ -21,7 +21,7 @@ namespace HelixSync.Test
             BaseDir = this.GetType().Name;
             Decr1  = new DirectoryTester($"{BaseDir}/Decr1", new Regex(@"\.helix.*"));
             Decr2  = new DirectoryTester($"{BaseDir}/Decr2", new Regex(@"\.helix.*"));
-            Encr1  = new DirectoryTester($"{BaseDir}/Encr1");
+            Encr1 = new DirectoryTester($"{BaseDir}/Encr1");
             Encr2  = new DirectoryTester($"{BaseDir}/Encr2");
 
             Decr1.Clear(true);
