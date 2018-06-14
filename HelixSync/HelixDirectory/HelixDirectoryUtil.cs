@@ -13,37 +13,47 @@ namespace HelixSync.HelixDirectory
         {
             console = console ?? new ConsoleEx();
 
-            console.WriteLine(VerbosityLevel.Normal, 0, "Performing Cleanup on Encr Directory...");
+            console.WriteLine(VerbosityLevel.Normal, 0, $"Performing cleanup on {directory.FullName}...");
 
+            //Staged Files
             console.WriteLine(VerbosityLevel.Detailed, 1, directory.FullName);
             console.WriteLine(VerbosityLevel.Detailed, 1, $"Removing staged files ({Path.ChangeExtension("*.*", HelixConsts.StagedHxExtention)})");
+            bool foundFile = false;
             foreach (FSFile file in directory.GetEntries(SearchOption.AllDirectories)
                                         .ToArray()
                                         .OfType<FSFile>()
                                         .Where(f => string.Equals(Path.GetExtension(f.FullName), HelixConsts.StagedHxExtention)))
             {
-                console.WriteLine(VerbosityLevel.Detailed, 2, $"Removing staged file {file.FullName}");
+                foundFile = true;
+                console.WriteLine(VerbosityLevel.Detailed, 2, $"Removing staged file {file.RelativePath}");
                 file.Delete();
             }
+            if (!foundFile)
+                console.WriteLine(VerbosityLevel.Detailed, 2, $"No files to cleanup");
 
-
+            //Backup Files
+            foundFile = false;
             console.WriteLine(VerbosityLevel.Detailed, 1, $"Reverting incomplete ({Path.ChangeExtension("*.*", HelixConsts.BackupExtention)})");
             foreach (FSFile file in directory.GetEntries(SearchOption.AllDirectories)
                                         .ToArray()
                                         .OfType<FSFile>()
                                         .Where(f => string.Equals(Path.GetExtension(f.FullName), HelixConsts.BackupExtention)))
             {
-                var destination = Path.ChangeExtension(file.FullName, "");
-                console.WriteLine(VerbosityLevel.Detailed, 3, $"Incomplete file, restoring backup {file.FullName} => {destination}");
-                if (directory.Exists(destination))
+                var destinationRelativePath = Path.ChangeExtension(file.RelativePath, null);
+
+                console.WriteLine(VerbosityLevel.Detailed, 3, $"Incomplete file, restoring backup {file.RelativePath} => {destinationRelativePath}");
+                if (directory.Exists(destinationRelativePath))
                 {
-                    console.WriteLine(VerbosityLevel.Diagnostic, 4, $"Removing {destination}");
-                    (directory.TryGetEntry(destination) as FSFile).Delete();
+                    console.WriteLine(VerbosityLevel.Diagnostic, 4, $"Removing {destinationRelativePath}");
+                    (directory.TryGetEntry(destinationRelativePath) as FSFile).Delete();
                 }
 
-                console.WriteLine(VerbosityLevel.Diagnostic, 4, $"Renaming {Path.GetFileName(file.FullName)} to {Path.GetFileName(destination)}");
-                file.MoveTo(destination);
+                console.WriteLine(VerbosityLevel.Diagnostic, 4, $"Renaming {Path.GetFileName(file.RelativePath)} to {Path.GetFileName(destinationRelativePath)}");
+                file.MoveTo(destinationRelativePath);
             }
+            if (!foundFile)
+                console.WriteLine(VerbosityLevel.Detailed, 2, $"No files to cleanup");
+
 
             console.WriteLine(VerbosityLevel.Detailed, 1, "Cleanup Complete");
         }

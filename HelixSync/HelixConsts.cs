@@ -10,7 +10,7 @@ using System.IO;
 
 namespace HelixSync
 {
-    static class HelixConsts
+    public static class HelixConsts
     {
         public const int FileDesignatorSize = 8;
         public const int IVSize = 16;
