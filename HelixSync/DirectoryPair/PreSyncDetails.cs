@@ -21,7 +21,7 @@ namespace HelixSync
 
         public string EncrFileName { get; set; }
         public string DecrFileName { get; set; }
-        
+
         public PreSyncMode SyncMode { get; set; }
         public FileEntryType DisplayEntryType { get; set; }
         public long DisplayFileLength { get; set; }
@@ -37,7 +37,7 @@ namespace HelixSync
                 builder.Append("<PUR> ");
             else
                 builder.Append(HelixUtil.FormatBytes5(DisplayFileLength) + " "); //ex 1.5KB
-            
+
             if (DisplayOperation == PreSyncOperation.Add)
                 builder.Append("+ ");
             else if (DisplayOperation == PreSyncOperation.Remove)
@@ -57,6 +57,8 @@ namespace HelixSync
                 builder.Append("DEC=>ENC ");
             else if (SyncMode == PreSyncMode.EncryptedSide)
                 builder.Append("ENC=>DEC ");
+            else if (SyncMode == PreSyncMode.Conflict)
+                builder.Append("CONFLICT ");
             else //(SyncMode == PreSyncMode.Unknown)
                 builder.Append("UNKNOWN  ");
 
@@ -68,7 +70,7 @@ namespace HelixSync
 
         public string DiagnosticString()
         {
-            return 
+            return
                 $"DecrFileName: {this.DecrFileName}\n" +
                 $"EncrFileName: {this.EncrFileName}\n" +
                 $"DecrEntryType: {DecrInfo?.EntryType}\n" +

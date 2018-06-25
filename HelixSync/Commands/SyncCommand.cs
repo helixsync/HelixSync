@@ -171,7 +171,7 @@ namespace HelixSync
                     decrDirectory.Cleanup(consoleEx);
 
                     List<PreSyncDetails> changes = pair.FindChanges();
-                    
+
                     if (changes.Count == 0)
                         consoleEx.WriteLine("--No Changes--");
 
@@ -197,6 +197,22 @@ namespace HelixSync
 
                         //todo: prompt on conflict
 
+                        if (change.SyncMode == PreSyncMode.Conflict)
+                        {
+                            consoleEx.WriteLine($"    Decrypted - Modified: {change.DecrInfo.LastWriteTimeUtc.ToLocalTime()}, Size: {HelixUtil.FormatBytes5(change.DecrInfo.Length)}");
+                            consoleEx.WriteLine($"    Encrypted - Modified: {change.EncrInfo.LastWriteTimeUtc.ToLocalTime()}, Size: {HelixUtil.FormatBytes5(change.EncrHeader.Length)}");
+                            consoleEx.WriteLine($"");
+                            consoleEx.WriteLine($"    D - Decrypted, E - Encrypted, S - Skip"); //todo: support newer, support always
+                            var response = consoleEx.PromptChoice("    Select Option [D,E,S]? ", new string[] { "D", "E", "S" }, "S");
+                            if (response == "D")
+                                change.SyncMode = PreSyncMode.DecryptedSide;
+                            else if (response == "E")
+                                change.SyncMode = PreSyncMode.EncryptedSide;
+
+                            if (change.SyncMode != PreSyncMode.Conflict)
+                                consoleEx.WriteLine(change);
+                        }
+
                         if (change.SyncMode == PreSyncMode.EncryptedSide)
                         {
                             if (change.DisplayOperation == PreSyncOperation.Add)
@@ -207,7 +223,6 @@ namespace HelixSync
                                 encrChange++;
                             else
                                 encrOther++;
-
                         }
                         else if (change.SyncMode == PreSyncMode.DecryptedSide)
                         {

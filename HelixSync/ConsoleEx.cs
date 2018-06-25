@@ -56,7 +56,7 @@ namespace HelixSync
             if ((int)this.Verbosity >= (int)level)
             {
                 BeforeWriteLine?.Invoke(value);
-                Console.WriteLine($"{new string(' ', indent*2)}{value}");
+                Console.WriteLine($"{new string(' ', indent * 2)}{value}");
             }
         }
 
@@ -82,6 +82,27 @@ namespace HelixSync
                     return false;
                 if (string.IsNullOrEmpty(value) && defaultValue != null)
                     return (bool)defaultValue;
+            }
+        }
+
+        public string PromptChoice(string prompt, string[] options, string defaultValue = null)
+        {
+            if (!Interactive)
+                throw new InvalidOperationException("Unable to prompt in non-interactive console");
+
+            while (true)
+            {
+                Console.Write(prompt);
+                string value = Console.ReadLine() ?? "";
+
+                if (string.IsNullOrEmpty(value))
+                    value = defaultValue ?? "";
+
+                foreach (var option in options)
+                {
+                    if (string.Equals(value, option, StringComparison.OrdinalIgnoreCase))
+                        return option;
+                }
             }
         }
     }
