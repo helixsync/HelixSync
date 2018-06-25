@@ -189,6 +189,7 @@ namespace HelixSync
 
                     int conflict = 0;
 
+                    consoleEx.WriteLine(VerbosityLevel.Normal, 0, "Performing Sync...");
                     foreach (PreSyncDetails change in changes)
                     {
                         pair.RefreshPreSyncDetails(change);
