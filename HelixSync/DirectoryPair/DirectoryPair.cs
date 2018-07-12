@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
+using HelixSync.FileSystem;
 using HelixSync.HelixDirectory;
 
 namespace HelixSync
@@ -80,12 +81,12 @@ namespace HelixSync
                 throw new InvalidOperationException("DecrDirectory and EncrDirectory needs to be opened before performing operation");
 
             console.WriteLine(VerbosityLevel.Diagnostic, 1, "Enumerating Encr Directory...");
-            List<FileEntry> encrDirectoryFiles = !EncrDirectory.IsOpen ? new List<FileEntry>() : EncrDirectory.GetAllEntries().ToList();
+            List<FSEntry> encrDirectoryFiles = !EncrDirectory.IsOpen ? new List<FSEntry>() : EncrDirectory.GetAllEntries().ToList();
             console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{encrDirectoryFiles.Count} files found");
 
             console.WriteLine(VerbosityLevel.Diagnostic, 1, $"Enumerating Decr Directory...");
             console.WriteLine(VerbosityLevel.Diagnostic, 2, $"Path: {DecrDirectory.DirectoryPath}");
-            List<FileEntry> decrDirectoryFiles = DecrDirectory.GetAllEntries().ToList();
+            List<FSEntry> decrDirectoryFiles = DecrDirectory.GetAllEntries().ToList();
             console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{decrDirectoryFiles.Count} files found");
 
             //todo: filter out log entries where the decr file name and the encr file name does not match
@@ -95,56 +96,73 @@ namespace HelixSync
             List<PreSyncDetails> preSyncDetails = new List<PreSyncDetails>();
 
             console.WriteLine(VerbosityLevel.Diagnostic, 1, "Performing 3 way compare...");
+
             //Adds Logs
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in log...");
             preSyncDetails.AddRange(syncLog.Select(entry => new PreSyncDetails { LogEntry = entry }));
+            console.WriteLine(VerbosityLevel.Diagnostic, 3, $"{preSyncDetails.Count} added");
 
             //Updates/Adds Decrypted File Information
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in decrypted information...");
+            int decrStatAdd = 0;
+            int decrStatMerge = 0;
             var decrJoin = decrDirectoryFiles
                 .GroupJoin(preSyncDetails,
-                    o => o.FileName,
+                    o => o.RelativePath,
                     i => i?.LogEntry?.DecrFileName,
-                    (o, i) => new Tuple<FileEntry, PreSyncDetails>(o, i.FirstOrDefault()));
+                    (o, i) => new Tuple<FSEntry, PreSyncDetails>(o, i.FirstOrDefault()));
             foreach (var entry in decrJoin.ToList())
             {
                 if (entry.Item2 == null)
                 {
                     //New Entry (not in log)
                     preSyncDetails.Add(new HelixSync.PreSyncDetails { DecrInfo = entry.Item1 });
+                    decrStatAdd ++;
                 }
                 else
                 {
                     //Existing Entry (update only)
                     entry.Item2.DecrInfo = entry.Item1;
+                    if (entry.Item1 != null)
+                        decrStatMerge++;
                 }
             }
+            console.WriteLine(VerbosityLevel.Diagnostic, 3, $"{decrStatAdd} added, {decrStatMerge} merged");
 
             //find encrypted file names
             foreach (var entry in preSyncDetails)
             {
-                entry.DecrFileName = entry.LogEntry?.DecrFileName ?? entry.DecrInfo.FileName;
+                entry.DecrFileName = entry.LogEntry?.DecrFileName ?? entry.DecrInfo.RelativePath;
                 entry.EncrFileName = EncrDirectory.FileNameEncoder.EncodeName(entry.DecrFileName);
             }
 
 
             //Updates/adds encrypted File Information
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in encrypted information...");
+            int encrStatAdd = 0;
+            int encrStatMerge = 0;
             var encrJoin = encrDirectoryFiles
                 .GroupJoin(preSyncDetails,
-                    o => o.FileName,
+                    o => o.RelativePath,
                     i => i.EncrFileName,
-                    (o, i) => new Tuple<FileEntry, PreSyncDetails>(o, i.FirstOrDefault()));
+                    (o, i) => new Tuple<FSEntry, PreSyncDetails>(o, i.FirstOrDefault()));
             foreach (var entry in encrJoin.ToList())
             {
                 if (entry.Item2 == null)
                 {
                     //New Entry (not in log or decrypted file)
-                    preSyncDetails.Add(new PreSyncDetails { EncrInfo = entry.Item1, EncrFileName = entry.Item1.FileName });
+                    preSyncDetails.Add(new PreSyncDetails { EncrInfo = entry.Item1, EncrFileName = entry.Item1.RelativePath });
+                    encrStatAdd++;
                 }
                 else
                 {
                     //Existing Entry
                     entry.Item2.EncrInfo = entry.Item1;
+                    if(entry.Item1 != null)
+                        encrStatMerge++;
                 }
             }
+            console.WriteLine(VerbosityLevel.Diagnostic, 3, $"{encrStatAdd} added, {encrStatMerge} merged");
 
             foreach (PreSyncDetails entry in preSyncDetails)
                 RefreshPreSyncMode(entry);
@@ -165,15 +183,20 @@ namespace HelixSync
                 .ToList();
 
             //Fills in the EncrHeader
+            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Refreshing EncrHeaders...");
+            int statsRefreshHeaderCount = 0;
             foreach (PreSyncDetails match in matches.Where(m => m.EncrInfo != null))
             {
                 RefreshPreSyncEncrHeader(match);
                 RefreshPreSyncMode(match);
+                statsRefreshHeaderCount++;
             }
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"Updated {statsRefreshHeaderCount} headers");
 
             //todo: reorder based on dependencies
             //todo: detect conflicts
 
+            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Sorting...");
             return Sort(matches);
 
             //return matches.OrderBy(m =>
@@ -307,7 +330,7 @@ namespace HelixSync
                 NoDependents.RemoveAt(randomvalue);
                 outputList.Add(next);
 
-                //clear dependents, adds to the NoDependents list if posible
+                //clear dependents, adds to the NoDependents list if possible
                 if (DependParentToChild.TryGetValue(next, out var children))
                 {
                     foreach (var child in children)
@@ -335,14 +358,14 @@ namespace HelixSync
             if (preSyncDetails == null)
                 throw new ArgumentNullException(nameof(preSyncDetails));
 
-            string encryFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(preSyncDetails.EncrInfo.FileName));
-            if (File.Exists(encryFullPath))
+            string encrFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(preSyncDetails.EncrFileName));
+            if (File.Exists(encrFullPath))
             {
-                preSyncDetails.EncrHeader = HelixFile.DecryptHeader(encryFullPath, EncrDirectory.DerivedBytesProvider);
+                preSyncDetails.EncrHeader = HelixFile.DecryptHeader(encrFullPath, EncrDirectory.DerivedBytesProvider);
 
                 //Updates the DecrFileName (if necessary)
                 if (string.IsNullOrEmpty(preSyncDetails.DecrFileName)
-                    && EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.EncrHeader.FileName) == preSyncDetails.EncrInfo.FileName)
+                    && EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.EncrHeader.FileName) == preSyncDetails.EncrInfo.RelativePath)
                 {
                     preSyncDetails.DecrFileName = preSyncDetails.EncrHeader.FileName;
                 }
@@ -377,7 +400,7 @@ namespace HelixSync
                 decrChanged = false;
             }
             else if (LogEntry.EntryType == decrType
-                && LogEntry.DecrFileName == DecrInfo.FileName
+                && LogEntry.DecrFileName == DecrInfo.RelativePath
                 && LogEntry.DecrModified == DecrInfo.LastWriteTimeUtc)
             {
                 decrChanged = false;
@@ -406,7 +429,7 @@ namespace HelixSync
             {
                 throw new NotImplementedException($"EncrInfo is null. {preSyncDetails.DiagnosticString()}\ndecrChanged: {decrChanged}");
             }
-            else if (LogEntry.EncrFileName == EncrInfo.FileName
+            else if (LogEntry.EncrFileName == EncrInfo.RelativePath
                 && LogEntry.EncrModified == EncrInfo.LastWriteTimeUtc)
             {
                 encrChanged = false;
@@ -518,15 +541,11 @@ namespace HelixSync
             if (string.IsNullOrEmpty(preSyncDetails.EncrFileName))
                 preSyncDetails.EncrFileName = EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.DecrFileName);
 
-            preSyncDetails.EncrInfo = FileEntry.FromFile(Path.Combine(EncrDirectory.DirectoryPath, preSyncDetails.EncrFileName),
-                                                        EncrDirectory.DirectoryPath);
+            preSyncDetails.EncrInfo = EncrDirectory.GetFileEntry(preSyncDetails.EncrFileName);
             RefreshPreSyncEncrHeader(preSyncDetails);
 
             if (!string.IsNullOrEmpty(preSyncDetails.DecrFileName))
-            {
-                preSyncDetails.DecrInfo = FileEntry.FromFile(Path.Combine(DecrDirectory.DirectoryPath, preSyncDetails.DecrFileName),
-                                                     DecrDirectory.DirectoryPath);
-            }
+                preSyncDetails.DecrInfo = DecrDirectory.GetFileEntry(preSyncDetails.DecrFileName);
 
             preSyncDetails.LogEntry = DecrDirectory.SyncLog.FindByDecrFileName(preSyncDetails.DecrFileName);
 
@@ -535,25 +554,25 @@ namespace HelixSync
 
         public SyncLogEntry CreateNewLogEntryFromDecrPath(string decrFileName)
         {
-            FileEntry decrEntry = DecrDirectory.GetFileEntry(decrFileName);
+            FSEntry decrEntry = DecrDirectory.GetFileEntry(decrFileName);
 
             string encrFileName = EncrDirectory.FileNameEncoder.EncodeName(decrFileName);
-            FileEntry encrEntry = EncrDirectory.GetFileEntry(encrFileName);
+            FSEntry encrEntry = EncrDirectory.GetFileEntry(encrFileName);
 
-            return new SyncLogEntry(decrEntry.EntryType, decrEntry.FileName, decrEntry.LastWriteTimeUtc, encrEntry.FileName, encrEntry.LastWriteTimeUtc);
+            return new SyncLogEntry(decrEntry.EntryType, decrEntry.RelativePath, decrEntry.LastWriteTimeUtc, encrEntry.RelativePath, encrEntry.LastWriteTimeUtc);
         }
         public SyncLogEntry CreateNewLogEntryFromEncrPath(string encrFileName)
         {
             string encrFilePath = Path.Combine(EncrDirectoryPath, encrFileName);
 
-            FileEntry encrEntry = EncrDirectory.GetFileEntry(encrFileName);
+            FSEntry encrEntry = EncrDirectory.GetFileEntry(encrFileName);
 
             FileEntry header = HelixFile.DecryptHeader(encrFilePath, EncrDirectory.DerivedBytesProvider);
             var decrFileName = header.FileName;
             if (encrFileName != EncrDirectory.FileNameEncoder.EncodeName(decrFileName))
                 throw new HelixException("Encrypted file name does not match"); //todo: prompt for action
 
-            return new SyncLogEntry(header.EntryType, header.FileName, header.LastWriteTimeUtc, encrEntry.FileName, encrEntry.LastWriteTimeUtc);
+            return new SyncLogEntry(header.EntryType, header.FileName, header.LastWriteTimeUtc, encrEntry.RelativePath, encrEntry.LastWriteTimeUtc);
         }
 
         public SyncLogEntry CreateEntryFromHeader(FileEntry decrFileInfo, FileEntry encrFileInfo)

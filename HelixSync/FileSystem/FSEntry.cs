@@ -9,7 +9,7 @@ namespace HelixSync.FileSystem
     {
         protected FSEntry(string fullPath, FSDirectory parent, bool whatIf)
         {
-            FullName = fullPath;
+            FullName = HelixUtil.PathUniversal(fullPath);
             Parent = parent;
             Root = parent?.Root ?? (this as FSDirectory);
             WhatIf = whatIf;
@@ -29,11 +29,11 @@ namespace HelixSync.FileSystem
                 if (!WhatIf)
                 {
                     if (this is FSDirectory)
-                        Directory.SetLastWriteTimeUtc(FullName, value);
+                        Directory.SetLastWriteTimeUtc(HelixUtil.PathNative(FullName), value);
                     else
-                        File.SetLastWriteTimeUtc(FullName, value);
+                        File.SetLastWriteTimeUtc(HelixUtil.PathNative(FullName), value);
                 }
-                m_LastWriteTimeUtc = value;
+                m_LastWriteTimeUtc = HelixUtil.TruncateTicks(value);
             }
         }
 
@@ -45,13 +45,13 @@ namespace HelixSync.FileSystem
 
         protected virtual void PopulateFromInfo(FileSystemInfo info)
         {
-            this.m_LastWriteTimeUtc = info.LastWriteTimeUtc;
+            this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(info.LastWriteTimeUtc);
             this.m_Length = (info as FileInfo)?.Length ?? ((long)0);
         }
 
         protected virtual void PopulateFromInfo(DateTime lastWriteTimeUtc, long length)
         {
-            this.m_LastWriteTimeUtc = lastWriteTimeUtc;
+            this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(lastWriteTimeUtc);
             this.m_Length = length;
         }
 
@@ -77,11 +77,14 @@ namespace HelixSync.FileSystem
             if (string.IsNullOrEmpty(root))
                 return path;
 
+            path = HelixUtil.PathUniversal(path);
+            root = HelixUtil.PathUniversal(root);
+
             if (path == root)
                 return "";
 
-            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-                root = root + Path.DirectorySeparatorChar;
+            if (!root.EndsWith(HelixUtil.UniversalDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                root = root + HelixUtil.UniversalDirectorySeparatorChar;
 
             if (!path.StartsWith(root, StringComparison.Ordinal))
                 throw new ArgumentOutOfRangeException(nameof(path), "path must start with the root directory (path:" + path + ", root: " + root + ")");

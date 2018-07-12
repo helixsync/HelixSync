@@ -7,6 +7,7 @@ using Newtonsoft.Json.Converters;
 
 namespace HelixSync
 {
+    //todo: [Obsolete]
     public class FileEntry
     {
         public string FileName { get; set; }
@@ -90,44 +91,6 @@ namespace HelixSync
             fileInfo.LastWriteTimeUtc = DateTime.MinValue;
             fileInfo.EntryType = FileEntryType.Removed;
             return fileInfo;
-        }
-
-        public static IEnumerable<FileEntry> GetChildren(string fullPath, string root)
-        {
-            fullPath = HelixUtil.PathNative(fullPath);
-            root = HelixUtil.PathNative(root);
-
-            FileEntry fe = FromFile(fullPath, root);
-            if (fe.EntryType != FileEntryType.Directory)
-                return new List<FileEntry>();
-
-            DirectoryInfo directoryInfo = new DirectoryInfo(Path.Combine(root, fe.FileName));
-
-            List<FileEntry> results = new List<FileEntry>();
-            foreach (FileSystemInfo fsInfo in directoryInfo.EnumerateFileSystemInfos("*", SearchOption.AllDirectories))
-            {
-                FileEntry fileInfo = new FileEntry();
-
-
-                fileInfo.FileName = HelixUtil.RemoveRootFromPath(fsInfo.FullName, directoryInfo.FullName);
-                if (Path.DirectorySeparatorChar != HelixUtil.UniversalDirectorySeparatorChar)
-                    fileInfo.FileName = HelixUtil.PathUniversal(fileInfo.FileName);
-                if (fsInfo is FileInfo)
-                {
-                    fileInfo.LastWriteTimeUtc = HelixUtil.TruncateTicks(fsInfo.LastWriteTimeUtc);
-                    fileInfo.Length = ((FileInfo)fsInfo).Length;
-                    fileInfo.EntryType = FileEntryType.File;
-                    results.Add(fileInfo);
-                }
-                else if (fsInfo is DirectoryInfo)
-                {
-                    fileInfo.LastWriteTimeUtc = DateTime.MinValue;
-                    fileInfo.EntryType = FileEntryType.Directory;
-                    results.Add(fileInfo);
-                }
-            }
-
-            return results;
         }
 
 

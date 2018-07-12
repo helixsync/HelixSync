@@ -28,6 +28,9 @@ namespace HelixSync.FileSystem
         {
             if (string.IsNullOrEmpty(destinationPath))
                 throw new ArgumentNullException(nameof(destinationPath));
+
+            destinationPath = HelixUtil.PathUniversal(destinationPath);
+
             if (Path.IsPathRooted(destinationPath))
                 destinationPath = RemoveRootFromPath(destinationPath, Root.FullName);
 
@@ -45,7 +48,7 @@ namespace HelixSync.FileSystem
             newEntry.PopulateFromInfo(this.LastWriteTimeUtc, this.Length);
 
             if (!WhatIf)
-                File.Move(this.FullName, Path.Combine(Root.FullName, destinationPath));
+                File.Move(HelixUtil.PathNative(this.FullName), HelixUtil.PathNative(Path.Combine(Root.FullName, destinationPath)));
 
             ((IFSDirectoryCore)Parent).Remove(this);
             ((IFSDirectoryCore)newParent).Add(newEntry);
@@ -59,7 +62,7 @@ namespace HelixSync.FileSystem
         public void Delete()
         {
             if (!WhatIf)
-                File.Delete(this.FullName);
+                File.Delete(HelixUtil.PathNative(this.FullName));
             ((IFSDirectoryCore)Parent).Remove(this);
         }
     }

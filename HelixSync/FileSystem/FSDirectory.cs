@@ -93,12 +93,14 @@ namespace HelixSync.FileSystem
         /// <summary>
         /// Returns the FSEntry for the path. Returns null if not found.
         /// </summary>
-        /// <param name="path">Path can be relitive to the directory or absolute</param>
+        /// <param name="path">Path can be relative to the directory or absolute</param>
         public FSEntry TryGetEntry(string path)
         {
 
             if (path == null)
                 throw new ArgumentNullException(nameof(path));
+
+            path = HelixUtil.PathUniversal(path);
 
             if (Path.IsPathRooted(path))
                 path = RemoveRootFromPath(path, FullName);
@@ -108,14 +110,14 @@ namespace HelixSync.FileSystem
 
             Load();
 
-            var split = path.Split(Path.DirectorySeparatorChar);
+            var split = path.Split(HelixUtil.UniversalDirectorySeparatorChar);
             if (!children.Contains(split[0]))
                 return null;
             else if (split.Length == 1)
                 return children[split[0]];
             else
                 return (children[split[0]] as FSDirectory)?
-                    .TryGetEntry(string.Join(Path.DirectorySeparatorChar.ToString(), split.Skip(1).ToArray()));
+                    .TryGetEntry(string.Join(HelixUtil.UniversalDirectorySeparatorChar.ToString(), split.Skip(1).ToArray()));
         }
 
         /// <summary>

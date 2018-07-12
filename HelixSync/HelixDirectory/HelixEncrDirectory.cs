@@ -147,11 +147,11 @@ namespace HelixSync.HelixDirectory
             FSDirectory.Cleanup(console);
         }
 
-        public IEnumerable<FileEntry> GetAllEntries()
+        public IEnumerable<FSEntry> GetAllEntries()
         {
-            foreach (FileEntry fileEntry in FileEntry.GetChildren(DirectoryPath, DirectoryPath))
+            foreach (FSEntry fileEntry in FSDirectory.GetEntries( SearchOption.AllDirectories))
             {
-                string fileName = fileEntry.FileName;
+                string fileName = fileEntry.RelativePath;
 
                 if (string.Equals(fileName, HelixConsts.HeaderFileName))
                     continue;
@@ -171,9 +171,9 @@ namespace HelixSync.HelixDirectory
         }
 
 
-        public FileEntry GetFileEntry(string encrFileName)
+        public FSEntry GetFileEntry(string encrFileName)
         {
-            return FileEntry.FromFile(Path.Combine(DirectoryPath, encrFileName), DirectoryPath);
+            return FSDirectory.TryGetEntry(encrFileName);
         }
 
         public void Dispose()

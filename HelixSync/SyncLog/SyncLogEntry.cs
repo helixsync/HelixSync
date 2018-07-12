@@ -31,16 +31,15 @@ namespace HelixSync
 
             this.EntryType = entryType;
 
-            this.DecrFileName = decrFileName;
+            this.DecrFileName = HelixUtil.PathUniversal(decrFileName);
 
             if (entryType != FileEntryType.File)
                 this.DecrModified = DateTime.MinValue;
             else
-                this.DecrModified = decrModified;
+                this.DecrModified = HelixUtil.TruncateTicks(decrModified);
 
-            this.EncrFileName = encrFileName;
-
-            this.EncrModified = encrModified;
+            this.EncrFileName = HelixUtil.PathUniversal(encrFileName);
+            this.EncrModified = HelixUtil.TruncateTicks(encrModified);
         }
 
         public const string dateFormat = "yyyyMMdd't'HHmmssfff";
@@ -80,10 +79,10 @@ namespace HelixSync
 
             return new SyncLogEntry
             {
-                DecrFileName = decrFileName,
-                DecrModified = decrModified,
-                EncrFileName = encrFileName,
-                EncrModified = encrModified,
+                DecrFileName = HelixUtil.PathUniversal(decrFileName),
+                DecrModified = HelixUtil.TruncateTicks(decrModified),
+                EncrFileName = HelixUtil.PathUniversal(encrFileName),
+                EncrModified = HelixUtil.TruncateTicks(encrModified),
                 EntryTypeFlag = typeFlag,
             };
         }

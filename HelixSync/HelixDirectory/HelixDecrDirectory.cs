@@ -139,11 +139,11 @@ namespace HelixSync.HelixDirectory
             IsOpen = true;
         }
 
-        public IEnumerable<FileEntry> GetAllEntries()
+        public IEnumerable<FSEntry> GetAllEntries()
         {
-            foreach (FileEntry fileEntry in FileEntry.GetChildren(DirectoryPath, DirectoryPath))
+            foreach (FSEntry fileEntry in FSDirectory.GetEntries(SearchOption.AllDirectories))
             {
-                string fileName = fileEntry.FileName;
+                string fileName = fileEntry.RelativePath;
 
                 if (string.Equals(fileName, HelixConsts.SyncLogDirectory))
                     continue;
@@ -154,9 +154,9 @@ namespace HelixSync.HelixDirectory
             }
         }
 
-        public FileEntry GetFileEntry(string fileName)
+        public FSEntry GetFileEntry(string fileName)
         {
-            return FileEntry.FromFile(Path.Combine(DirectoryPath, fileName), DirectoryPath);
+            return FSDirectory.TryGetEntry(fileName);
         }
 
         /// <summary>

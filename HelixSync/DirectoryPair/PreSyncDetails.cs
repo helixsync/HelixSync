@@ -3,6 +3,7 @@
 
 using System;
 using System.Text;
+using HelixSync.FileSystem;
 
 namespace HelixSync
 {
@@ -13,8 +14,8 @@ namespace HelixSync
 
         }
 
-        public FileEntry DecrInfo { get; set; }
-        public FileEntry EncrInfo { get; set; }
+        public FSEntry DecrInfo { get; set; }
+        public FSEntry EncrInfo { get; set; }
         public FileEntry EncrHeader { get; set; }
         public SyncLogEntry LogEntry { get; set; }
 
