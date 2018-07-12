@@ -141,7 +141,12 @@ namespace HelixSync
 
         public static string JoinUniversal(params string[] paths)
         {
-            return string.Join(UniversalDirectorySeparatorChar.ToString(), paths.Where(p => !string.IsNullOrEmpty(p)));
+            return PathUniversal(string.Join(UniversalDirectorySeparatorChar.ToString(), paths.Where(p => !string.IsNullOrEmpty(p))));
+        }
+
+        public static string JoinNative(params string[] paths)
+        {
+            return PathNative(string.Join(Path.DirectorySeparatorChar.ToString(), paths.Where(p => !string.IsNullOrEmpty(p))));
         }
 
         /// <summary>

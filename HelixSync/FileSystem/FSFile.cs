@@ -42,9 +42,7 @@ namespace HelixSync.FileSystem
             if (newParent.TryGetEntry(Path.GetFileName(destinationPath)) != null)
                 throw new System.IO.DirectoryNotFoundException("Cannot move a file when that file already exists.");
 
-
-
-            var newEntry = new FSFile(destinationPath, newParent, WhatIf);
+            var newEntry = new FSFile(HelixUtil.JoinUniversal(Root.FullName, destinationPath), newParent, WhatIf);
             newEntry.PopulateFromInfo(this.LastWriteTimeUtc, this.Length);
 
             if (!WhatIf)

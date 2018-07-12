@@ -22,9 +22,9 @@ namespace HelixSync
                 throw new ArgumentNullException(nameof(encrFilePath));
             if (derivedBytesProvider == null)
                 throw new ArgumentNullException(nameof(derivedBytesProvider));
-            
+
             options = options ?? new FileEncryptOptions();
-            
+
             var encrStagedFileName = encrFilePath + HelixConsts.StagedHxExtention;
             var encrBackupFileName = encrFilePath + HelixConsts.BackupExtention;
 
@@ -35,8 +35,8 @@ namespace HelixSync
             if (!string.IsNullOrWhiteSpace(options.StoredFileName))
                 header.FileName = options.StoredFileName;
 
-            using (Stream streamIn = (header.EntryType != FileEntryType.File) 
-                                       ? (Stream)(new MemoryStream()) 
+            using (Stream streamIn = (header.EntryType != FileEntryType.File)
+                                       ? (Stream)(new MemoryStream())
                                        : File.Open(decrFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var streamOut = File.Open(encrStagedFileName, FileMode.CreateNew, FileAccess.Write))
             using (var encryptor = new HelixFileEncryptor(streamOut, derivedBytesProvider, options.FileVersion))
@@ -59,11 +59,11 @@ namespace HelixSync
                 }
 
                 options.Log?.Invoke("Destaging: Moving staged to normal");
-                
+
                 if (File.Exists(encrFilePath))
                     File.Move(encrFilePath, encrBackupFileName);
                 File.Move(encrStagedFileName, encrFilePath);
-                
+
                 options.Log?.Invoke("Destaging: Removing backup");
                 File.Delete(encrBackupFileName);
             }
@@ -77,7 +77,7 @@ namespace HelixSync
         public static string Decrypt(string encrPath, string decrPath, string password, FileDecryptOptions options = null)
         {
             options = (options ?? new FileDecryptOptions()).Clone();
-            return Decrypt(encrPath, decrPath, DerivedBytesProvider.FromPassword(password),  options);
+            return Decrypt(encrPath, decrPath, DerivedBytesProvider.FromPassword(password), options);
         }
         public static string Decrypt(string encrPath, string decrPath, DerivedBytesProvider derivedBytesProvider, FileDecryptOptions options = null)
         {
@@ -87,7 +87,7 @@ namespace HelixSync
                 throw new ArgumentNullException(nameof(decrPath));
             if (derivedBytesProvider == null)
                 throw new ArgumentNullException(nameof(derivedBytesProvider));
-            
+
             options = options ?? new FileDecryptOptions();
 
             using (FileStream inputStream = File.OpenRead(encrPath))
@@ -129,7 +129,10 @@ namespace HelixSync
                     File.Move(decrStagedFileName, decrFullFileName);
 
                     if (File.Exists(decrBackupFileName))
+                    {
+                        File.SetAttributes(decrBackupFileName, FileAttributes.Normal); //incase it was read only
                         File.Delete(decrBackupFileName);
+                    }
                     else if (Directory.Exists(decrBackupFileName))
                         Directory.Delete(decrBackupFileName);
                 }
@@ -155,7 +158,7 @@ namespace HelixSync
                     else if (Directory.Exists(decrFullFileName))
                         Directory.Move(decrFullFileName, decrBackupFileName);
                 }
-                
+
                 if (File.Exists(decrBackupFileName))
                     File.Delete(decrBackupFileName);
                 else if (Directory.Exists(decrBackupFileName))
@@ -163,7 +166,7 @@ namespace HelixSync
             }
             return decrPath;
         }
-        
+
         /// <summary>
         /// Returns the header for an encrypted file
         /// </summary>
@@ -173,7 +176,8 @@ namespace HelixSync
             using (var decryptor = new HelixFileDecryptor(inputStream))
             {
 
-                try {
+                try
+                {
                     decryptor.Initialize(derivedBytesProvider);
 
                     FileEntry header = decryptor.ReadHeader();
@@ -183,9 +187,13 @@ namespace HelixSync
                         throw ex;
 
                     return header;
-                } catch(FileCorruptionException ex){
+                }
+                catch (FileCorruptionException ex)
+                {
                     throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
-                } catch(AuthenticatedEncryptionException ex){
+                }
+                catch (AuthenticatedEncryptionException ex)
+                {
                     throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
                 }
             }

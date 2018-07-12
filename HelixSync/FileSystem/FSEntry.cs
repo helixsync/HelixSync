@@ -9,7 +9,18 @@ namespace HelixSync.FileSystem
     {
         protected FSEntry(string fullPath, FSDirectory parent, bool whatIf)
         {
-            FullName = HelixUtil.PathUniversal(fullPath);
+            if (string.IsNullOrEmpty(fullPath))
+                throw new ArgumentNullException(nameof(fullPath));
+            fullPath = HelixUtil.PathUniversal(fullPath);
+
+            if (!Path.IsPathRooted(fullPath))
+                throw new ArgumentException("path must be rooted (ie start with c:\\)", nameof(fullPath));
+
+
+            if (parent != null && !fullPath.StartsWith(parent.FullName + HelixUtil.UniversalDirectorySeparatorChar))
+                throw new ArgumentException($"path must be a child of the parent (fullPath: {fullPath}, parent: {parent.FullName}", fullPath);
+
+            FullName = fullPath;
             Parent = parent;
             Root = parent?.Root ?? (this as FSDirectory);
             WhatIf = whatIf;

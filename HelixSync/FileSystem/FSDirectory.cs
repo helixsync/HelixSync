@@ -35,7 +35,7 @@ namespace HelixSync.FileSystem
             if (IsLoaded && !deep)
                 return;
 
-            Load(new DirectoryInfo(FullName), deep);
+            Load(new DirectoryInfo(this.FullName), deep);
         }
         protected void Load(DirectoryInfo directoryInfo, bool deep)
         {
@@ -184,9 +184,10 @@ namespace HelixSync.FileSystem
         /// <summary>
         /// Returns if the file or directory exists.
         /// </summary>
-        /// <param name="path">Path can be relitive to the directory or absolute</param>
+        /// <param name="path">Path can be relative to the directory or absolute</param>
         public bool Exists(string path)
         {
+            path = HelixUtil.PathUniversal(path);
             return TryGetEntry(path) != null;
         }
 

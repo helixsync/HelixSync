@@ -80,30 +80,30 @@ namespace HelixSync
             if (!WhatIf && (!EncrDirectory.IsOpen || !DecrDirectory.IsOpen))
                 throw new InvalidOperationException("DecrDirectory and EncrDirectory needs to be opened before performing operation");
 
-            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Enumerating Encr Directory...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Enumerating Encr Directory...");
             List<FSEntry> encrDirectoryFiles = !EncrDirectory.IsOpen ? new List<FSEntry>() : EncrDirectory.GetAllEntries().ToList();
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{encrDirectoryFiles.Count} files found");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"{encrDirectoryFiles.Count} files found");
 
-            console.WriteLine(VerbosityLevel.Diagnostic, 1, $"Enumerating Decr Directory...");
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"Path: {DecrDirectory.DirectoryPath}");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, $"Enumerating Decr Directory...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"Path: {DecrDirectory.DirectoryPath}");
             List<FSEntry> decrDirectoryFiles = DecrDirectory.GetAllEntries().ToList();
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{decrDirectoryFiles.Count} files found");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"{decrDirectoryFiles.Count} files found");
 
             //todo: filter out log entries where the decr file name and the encr file name does not match
-            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Reading sync log (decr side)...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Reading sync log (decr side)...");
             IEnumerable<SyncLogEntry> syncLog = !DecrDirectory.IsOpen ? (IEnumerable<SyncLogEntry>)new List<SyncLogEntry>() : DecrDirectory.SyncLog;
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{syncLog.Count()} entries found");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"{syncLog.Count()} entries found");
             List<PreSyncDetails> preSyncDetails = new List<PreSyncDetails>();
 
-            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Performing 3 way compare...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Performing 3 way compare...");
 
             //Adds Logs
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in log...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in log...");
             preSyncDetails.AddRange(syncLog.Select(entry => new PreSyncDetails { LogEntry = entry }));
-            console.WriteLine(VerbosityLevel.Diagnostic, 3, $"{preSyncDetails.Count} added");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 3, $"{preSyncDetails.Count} added");
 
             //Updates/Adds Decrypted File Information
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in decrypted information...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in decrypted information...");
             int decrStatAdd = 0;
             int decrStatMerge = 0;
             var decrJoin = decrDirectoryFiles
@@ -127,7 +127,7 @@ namespace HelixSync
                         decrStatMerge++;
                 }
             }
-            console.WriteLine(VerbosityLevel.Diagnostic, 3, $"{decrStatAdd} added, {decrStatMerge} merged");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 3, $"{decrStatAdd} added, {decrStatMerge} merged");
 
             //find encrypted file names
             foreach (var entry in preSyncDetails)
@@ -138,7 +138,7 @@ namespace HelixSync
 
 
             //Updates/adds encrypted File Information
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in encrypted information...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in encrypted information...");
             int encrStatAdd = 0;
             int encrStatMerge = 0;
             var encrJoin = encrDirectoryFiles
@@ -162,7 +162,7 @@ namespace HelixSync
                         encrStatMerge++;
                 }
             }
-            console.WriteLine(VerbosityLevel.Diagnostic, 3, $"{encrStatAdd} added, {encrStatMerge} merged");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 3, $"{encrStatAdd} added, {encrStatMerge} merged");
 
             foreach (PreSyncDetails entry in preSyncDetails)
                 RefreshPreSyncMode(entry);
@@ -174,7 +174,7 @@ namespace HelixSync
         /// <summary>
         /// Returns a list of changes that need to be performed as part of the sync.
         /// </summary>
-        public List<PreSyncDetails> FindChanges(ConsoleEx console)
+        public List<PreSyncDetails> FindChanges(ConsoleEx console = null)
         {
             var rng = RandomNumberGenerator.Create();
 
@@ -183,7 +183,7 @@ namespace HelixSync
                 .ToList();
 
             //Fills in the EncrHeader
-            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Refreshing EncrHeaders...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Refreshing EncrHeaders...");
             int statsRefreshHeaderCount = 0;
             foreach (PreSyncDetails match in matches.Where(m => m.EncrInfo != null))
             {
@@ -191,12 +191,12 @@ namespace HelixSync
                 RefreshPreSyncMode(match);
                 statsRefreshHeaderCount++;
             }
-            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"Updated {statsRefreshHeaderCount} headers");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"Updated {statsRefreshHeaderCount} headers");
 
             //todo: reorder based on dependencies
             //todo: detect conflicts
 
-            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Sorting...");
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Sorting...");
             return Sort(matches);
 
             //return matches.OrderBy(m =>
@@ -438,6 +438,10 @@ namespace HelixSync
             {
                 encrChanged = false;
             }
+            else 
+            {
+                encrChanged = true;
+            }
 
             //todo: detect orphans
             //todo: detect case-only conflicts
@@ -650,18 +654,20 @@ namespace HelixSync
                     //todo: test to see if there are illegal characters
                     //todo: check if the name matches
 
-                    string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.EncrFileName));
-                    string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(fileSystemEntry.DecrFileName));
+                    string encrPath = HelixUtil.JoinNative(EncrDirectory.FSDirectory.FullName, fileSystemEntry.EncrFileName);
+                    string decrPath = HelixUtil.JoinNative(DecrDirectory.FSDirectory.FullName, fileSystemEntry.DecrFileName);
 
                     //todo: if file exists with different case - skip file
                     var exactPath = HelixUtil.GetExactPathName(decrPath);
-                    if (File.Exists(decrPath) && HelixUtil.GetExactPathName(decrPath) != decrPath)
+                    FSEntry decrEntry = DecrDirectory.FSDirectory.TryGetEntry(fileSystemEntry.DecrFileName);
+
+                    if (decrEntry != null && decrEntry.RelativePath != fileSystemEntry.DecrFileName)
                     {
                         //todo: throw more specific exception
                         return SyncResults.Failure(new HelixException($"Case only conflict file \"{decrPath}\" exists as \"{exactPath}\"."));
                     }
                     HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
-                    //todo: get the date on the file system (needed if the filesystem has less percission
+                    //todo: get the date on the file system (needed if the filesystem has less precision 
 
                     SyncLog.Add(fileSystemEntry);
                     DecrDirectory.FSDirectory.RefreshEntry(encrPath);
