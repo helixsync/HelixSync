@@ -26,14 +26,16 @@ namespace HelixSync.FileSystem
             get => m_LastWriteTimeUtc;
             set
             {
+                if (this is FSDirectory)
+                    return;
+
                 if (!WhatIf)
                 {
-                    if (this is FSDirectory)
-                        Directory.SetLastWriteTimeUtc(HelixUtil.PathNative(FullName), value);
-                    else
+                    if (this is FSFile)
                         File.SetLastWriteTimeUtc(HelixUtil.PathNative(FullName), value);
                 }
-                m_LastWriteTimeUtc = HelixUtil.TruncateTicks(value);
+                
+                m_LastWriteTimeUtc = HelixUtil.TruncateTicks(value); 
             }
         }
 
@@ -45,14 +47,30 @@ namespace HelixSync.FileSystem
 
         protected virtual void PopulateFromInfo(FileSystemInfo info)
         {
-            this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(info.LastWriteTimeUtc);
-            this.m_Length = (info as FileInfo)?.Length ?? ((long)0);
+            if (this is FSDirectory)
+            {
+                this.m_LastWriteTimeUtc = DateTime.MinValue;
+                this.m_Length = 0;
+            }
+            else 
+            {
+                this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(info.LastWriteTimeUtc);
+                this.m_Length = (info as FileInfo)?.Length ?? ((long)0);
+            }
         }
 
-        protected virtual void PopulateFromInfo(DateTime lastWriteTimeUtc, long length)
+        internal virtual void PopulateFromInfo(DateTime lastWriteTimeUtc, long length)
         {
-            this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(lastWriteTimeUtc);
-            this.m_Length = length;
+            if (this is FSDirectory)
+            {
+                this.m_LastWriteTimeUtc = DateTime.MinValue;
+                this.m_Length = 0;
+            }
+            else 
+            {
+                this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(lastWriteTimeUtc);
+                this.m_Length = length;
+            }
         }
 
         /// <summary>

@@ -139,6 +139,11 @@ namespace HelixSync
             return path.Substring(root.Length);
         }
 
+        public static string JoinUniversal(params string[] paths)
+        {
+            return string.Join(UniversalDirectorySeparatorChar.ToString(), paths.Where(p => !string.IsNullOrEmpty(p)));
+        }
+
         /// <summary>
         /// Used to determine if the path has illegal characters or invalid format
         /// </summary>

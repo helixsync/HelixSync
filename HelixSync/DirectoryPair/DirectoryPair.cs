@@ -382,7 +382,7 @@ namespace HelixSync
             var decrType = preSyncDetails.DecrInfo?.EntryType ?? FileEntryType.Removed;
             var encrType = preSyncDetails.EncrInfo?.EntryType ?? FileEntryType.Removed;
 
-            bool decrChanged = true;
+            bool decrChanged;
             if (LogEntry == null && DecrInfo == null)
             {
                 decrChanged = false;
@@ -404,6 +404,10 @@ namespace HelixSync
                 && LogEntry.DecrModified == DecrInfo.LastWriteTimeUtc)
             {
                 decrChanged = false;
+            }
+            else 
+            {
+                decrChanged = true;
             }
 
 
@@ -603,9 +607,6 @@ namespace HelixSync
             if (entry.SyncMode == PreSyncMode.DecryptedSide)
             {
                 SyncLogEntry logEntry = entry.LogEntry;
-                SyncLogEntry fileSystemEntry = CreateNewLogEntryFromDecrPath(entry.DecrFileName);
-                if (logEntry?.ToString() == fileSystemEntry?.ToString())
-                    return SyncResults.Skipped(); //Unchanged
 
 
                 string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(entry.EncrFileName));
@@ -618,12 +619,16 @@ namespace HelixSync
                 options.Log = (s) => console?.WriteLine(VerbosityLevel.Diagnostic, 1, s);
 
                 HelixFile.Encrypt(decrPath, encrPath, EncrDirectory.DerivedBytesProvider, options);
+
+                //forces a change if the file was modified to quickly
                 if (logEntry != null && (File.GetLastWriteTimeUtc(encrPath) - logEntry.EncrModified).TotalMilliseconds < encrTimespanPrecisionMS)
                 {
                     File.SetLastWriteTimeUtc(encrPath, logEntry.EncrModified + TimeSpan.FromMilliseconds(encrTimespanPrecisionMS));
                 }
-
+                
                 SyncLog.Add(CreateEntryFromHeader(header, FileEntry.FromFile(encrPath, EncrDirectory.DirectoryPath)));
+                EncrDirectory.FSDirectory.RefreshEntry(encrPath);
+
                 return SyncResults.Success();
             }
             else if (entry.SyncMode == PreSyncMode.EncryptedSide)
@@ -659,6 +664,7 @@ namespace HelixSync
                     //todo: get the date on the file system (needed if the filesystem has less percission
 
                     SyncLog.Add(fileSystemEntry);
+                    DecrDirectory.FSDirectory.RefreshEntry(encrPath);
                     return SyncResults.Success();
                 }
             }

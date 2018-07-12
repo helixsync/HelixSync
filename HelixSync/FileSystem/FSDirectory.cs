@@ -23,6 +23,9 @@ namespace HelixSync.FileSystem
             this.PopulateFromInfo(directoryInfo);
         }
 
+        
+
+
         public bool IsLoaded { get; private set; }
         bool IsLoadedDeep { get; set; }
         public void Load(bool deep = false)
@@ -120,6 +123,64 @@ namespace HelixSync.FileSystem
                     .TryGetEntry(string.Join(HelixUtil.UniversalDirectorySeparatorChar.ToString(), split.Skip(1).ToArray()));
         }
 
+        public void RefreshEntry(string path)
+        {
+            path = HelixUtil.PathUniversal(path);
+
+            var split = path.Split(HelixUtil.UniversalDirectorySeparatorChar);
+            FSEntry newEntry;
+
+            FileSystemInfo info;
+            string fullPath = HelixUtil.JoinUniversal(this.FullName, split[0]);
+            if (System.IO.Directory.Exists(fullPath))
+            {
+                info = new DirectoryInfo(fullPath);
+            }
+            else if (System.IO.File.Exists(fullPath))
+            {
+                info = new FileInfo(fullPath);
+            }
+            else
+            {
+                info = null;
+            }
+
+            if (info is DirectoryInfo dirInfo)
+            {
+                newEntry = new FSDirectory(dirInfo, this, this.WhatIf);
+            }
+            else if (info is FileInfo fileInfo)
+            {
+                newEntry = new FSFile(fileInfo, this, this.WhatIf);
+            }
+            else
+            {
+                newEntry = null; //not found
+            }
+
+            FSEntry oldEntry;
+            children.TryGetValue(split[0], out oldEntry);
+            if (newEntry?.EntryType != oldEntry?.EntryType)
+            {
+                if (oldEntry != null)
+                    children.Remove(oldEntry);
+                if (newEntry != null)
+                    children.Add(newEntry);
+            }
+            else if (newEntry != null && oldEntry != null)
+            {
+                oldEntry.PopulateFromInfo(newEntry.LastWriteTimeUtc, newEntry.Length);
+                newEntry = oldEntry;
+            }
+
+            if (newEntry != null)
+            {
+                children.Add(newEntry);
+                if (split.Length > 1)
+                    (newEntry as FSDirectory)?.RefreshEntry(HelixUtil.JoinUniversal(split.Skip(1).ToArray()));
+            }
+        }
+
         /// <summary>
         /// Returns if the file or directory exists.
         /// </summary>
@@ -163,7 +224,7 @@ namespace HelixSync.FileSystem
             children.Add(entry);
         }
 
-
+        
     }
 
 
