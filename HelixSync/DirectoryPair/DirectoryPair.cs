@@ -74,18 +74,27 @@ namespace HelixSync
         /// <summary>
         /// Matches files from Encr, Decr and Log Entry
         /// </summary>
-        private List<PreSyncDetails> MatchFiles()
+        private List<PreSyncDetails> MatchFiles(ConsoleEx console)
         {
             if (!WhatIf && (!EncrDirectory.IsOpen || !DecrDirectory.IsOpen))
                 throw new InvalidOperationException("DecrDirectory and EncrDirectory needs to be opened before performing operation");
 
+            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Enumerating Encr Directory...");
             List<FileEntry> encrDirectoryFiles = !EncrDirectory.IsOpen ? new List<FileEntry>() : EncrDirectory.GetAllEntries().ToList();
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{encrDirectoryFiles.Count} files found");
+
+            console.WriteLine(VerbosityLevel.Diagnostic, 1, $"Enumerating Decr Directory...");
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"Path: {DecrDirectory.DirectoryPath}");
             List<FileEntry> decrDirectoryFiles = DecrDirectory.GetAllEntries().ToList();
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{decrDirectoryFiles.Count} files found");
 
             //todo: filter out log entries where the decr file name and the encr file name does not match
+            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Reading sync log (decr side)...");
             IEnumerable<SyncLogEntry> syncLog = !DecrDirectory.IsOpen ? (IEnumerable<SyncLogEntry>)new List<SyncLogEntry>() : DecrDirectory.SyncLog;
+            console.WriteLine(VerbosityLevel.Diagnostic, 2, $"{syncLog.Count()} entries found");
             List<PreSyncDetails> preSyncDetails = new List<PreSyncDetails>();
 
+            console.WriteLine(VerbosityLevel.Diagnostic, 1, "Performing 3 way compare...");
             //Adds Logs
             preSyncDetails.AddRange(syncLog.Select(entry => new PreSyncDetails { LogEntry = entry }));
 
@@ -147,11 +156,11 @@ namespace HelixSync
         /// <summary>
         /// Returns a list of changes that need to be performed as part of the sync.
         /// </summary>
-        public List<PreSyncDetails> FindChanges()
+        public List<PreSyncDetails> FindChanges(ConsoleEx console)
         {
             var rng = RandomNumberGenerator.Create();
 
-            List<PreSyncDetails> matches = MatchFiles()
+            List<PreSyncDetails> matches = MatchFiles(console)
                 .Where(m => m.SyncMode != PreSyncMode.Unchanged)
                 .ToList();
 
@@ -331,7 +340,7 @@ namespace HelixSync
             {
                 preSyncDetails.EncrHeader = HelixFile.DecryptHeader(encryFullPath, EncrDirectory.DerivedBytesProvider);
 
-                //Updates the DecrFileName (if neccessary)
+                //Updates the DecrFileName (if necessary)
                 if (string.IsNullOrEmpty(preSyncDetails.DecrFileName)
                     && EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.EncrHeader.FileName) == preSyncDetails.EncrInfo.FileName)
                 {
