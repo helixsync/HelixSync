@@ -613,8 +613,8 @@ namespace HelixSync
                 SyncLogEntry logEntry = entry.LogEntry;
 
 
-                string encrPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(entry.EncrFileName));
-                string decrPath = Path.Combine(DecrDirectory.DirectoryPath, HelixUtil.PathNative(entry.DecrFileName));
+                string encrPath = Path.Combine(EncrDirectory.FSDirectory.FullName, HelixUtil.PathNative(entry.EncrFileName));
+                string decrPath = Path.Combine(DecrDirectory.FSDirectory.FullName, HelixUtil.PathNative(entry.DecrFileName));
                 FileEncryptOptions options = new FileEncryptOptions();
                 FileEntry header = null;
                 options.BeforeWriteHeader = (h) => header = h;
@@ -630,7 +630,8 @@ namespace HelixSync
                     File.SetLastWriteTimeUtc(encrPath, logEntry.EncrModified + TimeSpan.FromMilliseconds(encrTimespanPrecisionMS));
                 }
                 
-                SyncLog.Add(CreateEntryFromHeader(header, FileEntry.FromFile(encrPath, EncrDirectory.DirectoryPath)));
+                var newLogEntry = CreateEntryFromHeader(header, FileEntry.FromFile(encrPath, EncrDirectory.DirectoryPath));
+                SyncLog.Add(newLogEntry);
                 EncrDirectory.FSDirectory.RefreshEntry(encrPath);
 
                 return SyncResults.Success();

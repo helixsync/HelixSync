@@ -200,8 +200,13 @@ namespace HelixSync
 
                         if (change.SyncMode == PreSyncMode.Conflict)
                         {
-                            consoleEx.WriteLine($"    Decrypted - Modified: {change.DecrInfo.LastWriteTimeUtc.ToLocalTime()}, Size: {HelixUtil.FormatBytes5(change.DecrInfo.Length)}");
-                            consoleEx.WriteLine($"    Encrypted - Modified: {change.EncrInfo.LastWriteTimeUtc.ToLocalTime()}, Size: {HelixUtil.FormatBytes5(change.EncrHeader.Length)}");
+                            var decrModified = change.DecrInfo == null ? (object)null : change.DecrInfo.LastWriteTimeUtc.ToLocalTime();
+                            var decrSize = change.DecrInfo == null ? (object)null : HelixUtil.FormatBytes5(change.DecrInfo.Length);
+                            var encrModified = change.EncrInfo == null ? (object)null : change.EncrInfo.LastWriteTimeUtc.ToLocalTime();
+                            var encrSize = change.EncrHeader == null ? (object)null : HelixUtil.FormatBytes5(change.EncrHeader.Length);
+
+                            consoleEx.WriteLine($"    Decrypted - Modified: {decrModified}, Size: {decrSize}");
+                            consoleEx.WriteLine($"    Encrypted - Modified: {encrModified}, Size: {encrSize}");
                             consoleEx.WriteLine($"");
                             consoleEx.WriteLine($"    D - Decrypted, E - Encrypted, S - Skip"); //todo: support newer, support always
                             var response = consoleEx.PromptChoice("    Select Option [D,E,S]? ", new string[] { "D", "E", "S" }, "S");
