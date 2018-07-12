@@ -41,10 +41,8 @@ namespace HelixSync.FileSystem
 
 
 
-            var newEntry = new FSFile(destinationPath, newParent, WhatIf)
-            {
-                m_LastWriteTimeUtc = this.LastWriteTimeUtc,
-            };
+            var newEntry = new FSFile(destinationPath, newParent, WhatIf);
+            newEntry.PopulateFromInfo(this.LastWriteTimeUtc, this.Length);
 
             if (!WhatIf)
                 File.Move(this.FullName, Path.Combine(Root.FullName, destinationPath));

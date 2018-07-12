@@ -20,7 +20,7 @@ namespace HelixSync.FileSystem
         public FSDirectory Root { get; }
         public bool WhatIf { get; }
 
-        internal DateTime m_LastWriteTimeUtc;
+        private DateTime m_LastWriteTimeUtc;
         public DateTime LastWriteTimeUtc
         {
             get => m_LastWriteTimeUtc;
@@ -37,9 +37,22 @@ namespace HelixSync.FileSystem
             }
         }
 
+        private long m_Length;
+        public long Length
+        {
+            get { return m_Length; }
+        }
+
         protected virtual void PopulateFromInfo(FileSystemInfo info)
         {
             this.m_LastWriteTimeUtc = info.LastWriteTimeUtc;
+            this.m_Length = (info as FileInfo)?.Length ?? ((long)0);
+        }
+
+        protected virtual void PopulateFromInfo(DateTime lastWriteTimeUtc, long length)
+        {
+            this.m_LastWriteTimeUtc = lastWriteTimeUtc;
+            this.m_Length = length;
         }
 
         /// <summary>
@@ -74,6 +87,19 @@ namespace HelixSync.FileSystem
                 throw new ArgumentOutOfRangeException(nameof(path), "path must start with the root directory (path:" + path + ", root: " + root + ")");
 
             return path.Substring(root.Length);
+        }
+
+        public FileEntryType EntryType
+        {
+            get
+            {
+                if (this is FSFile)
+                    return FileEntryType.File;
+                else if (this is FSDirectory)
+                    return FileEntryType.Directory;
+                else
+                    throw new InvalidDataException("FSEntry is not a known type");
+            }
         }
 
         public override string ToString()
