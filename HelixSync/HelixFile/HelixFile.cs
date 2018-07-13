@@ -124,7 +124,11 @@ namespace HelixSync
                     if (File.Exists(decrFullFileName))
                         File.Move(decrFullFileName, decrBackupFileName);
                     else if (Directory.Exists(decrFullFileName))
+                    {
+                        if (Directory.GetFiles(decrFullFileName).Length > 0)
+                                throw new IOException($"Unable to process entry, directory is not empty ({decrFullFileName})");
                         Directory.Move(decrFullFileName, decrBackupFileName);
+                    }
 
                     File.Move(decrStagedFileName, decrFullFileName);
 
@@ -145,7 +149,11 @@ namespace HelixSync
                     {
                         //If there is a case difference need to delete the directory
                         if (Path.GetFileName(decrFullFileName) != Path.GetFileName(new DirectoryInfo(decrFullFileName).Name))
+                        {
+                            if (Directory.GetFiles(decrFullFileName).Length > 0)
+                                throw new IOException($"Unable to process entry, directory is not empty ({decrFullFileName})");
                             Directory.Move(decrFullFileName, decrBackupFileName);
+                        }
                     }
 
 
@@ -155,8 +163,12 @@ namespace HelixSync
                 {
                     if (File.Exists(decrFullFileName))
                         File.Move(decrFullFileName, decrBackupFileName);
-                    else if (Directory.Exists(decrFullFileName))
+                    else if (Directory.Exists(decrFullFileName)) 
+                    {
+                        if (Directory.GetFiles(decrFullFileName).Length > 0)
+                            throw new IOException($"Unable to process entry, directory is not empty ({decrFullFileName})");
                         Directory.Move(decrFullFileName, decrBackupFileName);
+                    }
                 }
 
                 if (File.Exists(decrBackupFileName))
