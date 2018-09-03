@@ -34,7 +34,7 @@ namespace HelixSync.Test
                 var fsDirectory = new FSDirectory("AA", true);
                 var child = fsDirectory.TryGetEntry(@"AB\xyz.txt");
 
-                Assert.AreEqual(@"AB\xyz.txt", child.RelativePath);
+                Assert.AreEqual(@"AB/xyz.txt", child.RelativePath);
                 Assert.IsNull(fsDirectory.TryGetEntry("missing.txt"));
                 Assert.IsInstanceOfType(fsDirectory.TryGetEntry("AB"), typeof(FSDirectory));
             }

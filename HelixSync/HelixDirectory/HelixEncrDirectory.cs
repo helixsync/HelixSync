@@ -171,12 +171,23 @@ namespace HelixSync.HelixDirectory
         }
 
 
-        public FSEntry GetFileEntry(string encrFileName)
+        public FSEntry GetFileEntry(string fileName)
         {
-            var entry = FSDirectory.TryGetEntry(encrFileName);
+            if (string.IsNullOrEmpty(fileName))
+                throw new ArgumentNullException(nameof(fileName));
+
+            var entry = FSDirectory.TryGetEntry(fileName);
             if (entry == null)
-                throw new HelixException($"No entry found for {encrFileName}"); //todo: throw more specific exception
+                throw new HelixException($"No entry found for {fileName}"); //todo: throw more specific exception
             return entry;
+        }
+
+        public FSEntry TryGetFileEntry(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                throw new ArgumentNullException(nameof(fileName));
+
+            return FSDirectory.TryGetEntry(fileName);
         }
 
         public void Dispose()

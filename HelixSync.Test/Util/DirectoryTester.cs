@@ -178,6 +178,7 @@ namespace HelixSync.Test
             {
                 return string.Join(Environment.NewLine, (object[])m_List.ToArray());
             }
+            [Obsolete]
             public override bool Equals(object obj)
             {
                 if (!(obj is DirectoryEntryCollection))
@@ -200,9 +201,13 @@ namespace HelixSync.Test
             }
         }
 
-        public void AssertEqual(string[] content, string message = null)
+        public void AssertEqual(DirectoryEntryCollection shouldBeContent, string message = null)
         {
-            var shouldBeContent = new DirectoryEntryCollection(content);
+            if (shouldBeContent == null)
+            {
+                throw new ArgumentNullException(nameof(shouldBeContent));
+            }
+
             var directoryContent = GetContent();
 
             message = message ?? "Directory contents not equal";
@@ -227,6 +232,18 @@ namespace HelixSync.Test
                     throw new DirectoryMismatchException($"{message} (extra file {directoryItem})");
                 }
             }
+        }
+
+        public void AssertEqual(string[] content, string message = null)
+        {
+            var shouldBeContent = new DirectoryEntryCollection(content);
+            AssertEqual(shouldBeContent, message);
+        }
+
+        public void AssertEqual(string content, string message = null)
+        {
+            var shouldBeContent = new DirectoryEntryCollection(content);
+            AssertEqual(shouldBeContent, message);
         }
 
         public class DirectoryMismatchException : Exception
@@ -347,6 +364,7 @@ namespace HelixSync.Test
                 }
             }
         }
+        [Obsolete]
         public bool EqualTo(params string[] content)
         {
             DirectoryEntryCollection entryCollection = new DirectoryEntryCollection(content);

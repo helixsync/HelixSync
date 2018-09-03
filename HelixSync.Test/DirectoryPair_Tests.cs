@@ -150,8 +150,6 @@ namespace HelixSync.Test
 
                 Assert.AreEqual("hello world2", File.ReadAllText(Util.Path("Decr/test.txt")));
 
-                //System.Threading.Thread.Sleep(timeStampPrecision); //ensure the timestap changes
-
                 //Delete (Orig => Encr)
                 origToEncr.Reset();
                 File.Delete(Util.Path("Orig/test.txt"));

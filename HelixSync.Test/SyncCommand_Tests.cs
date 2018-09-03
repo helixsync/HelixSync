@@ -12,10 +12,11 @@ using System.Threading.Tasks;
 using System.Collections;
 using HelixSync;
 using System.Threading;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
+    [TestClass]
     public class SyncCommand_Tests : IntegratedDirectoryTester
     {
 
@@ -73,24 +74,24 @@ namespace HelixSync.Test
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void SyncCommand_SimpleSync()
         {
             Decr1.UpdateTo("file1.txt < aa");
             SyncDecr1andEncr1();
             SyncDecr2andEncr1();
-            Assert.True(Decr2.EqualTo("file1.txt < aa"));
+            Decr2.AssertEqual(new string[] { "file1.txt < aa" });
 
             Decr1.UpdateTo("file1.txt < aa",
                            "file2.txt < bb");
 
             SyncDecr1andEncr1();
             SyncDecr2andEncr1();
-            Assert.True(Decr2.EqualTo("file1.txt < aa",
-                           "file2.txt < bb"));
+            Decr2.AssertEqual(new string[] { "file1.txt < aa",
+                           "file2.txt < bb" }); ;
         }
         
-        [Fact]
+        [TestMethod]
         public void SyncCommand_DeleteThenReAdd()
         {
             Decr1.UpdateTo("file1.txt < aa");
@@ -106,28 +107,28 @@ namespace HelixSync.Test
             SyncDecr1andEncr1();
             SyncDecr2andEncr1();
 
-            Assert.True(Decr2.EqualTo("file1.txt < abc"));
+            Decr2.AssertEqual("file1.txt < abc");
         }
 
-        [Fact]
+        [TestMethod]
         public void SyncCommand_ChangeCaseOnly()
         {
             for (int i = 0; i < 10; i++)
             {
                 Decr1.UpdateTo("A < xyz");
-                SyncDecr1andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.DecryptedSide));
-                SyncDecr2andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.EncryptedSide));
+                SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
+                SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
                 Decr1.AssertEqual(new string[] { "A < xyz" });
                 Decr2.AssertEqual(new string[] { "A < xyz" });
 
                 Decr1.UpdateTo("a");
-                SyncDecr1andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.DecryptedSide));
-                SyncDecr2andEncr1(p => Assert.True(p.SyncMode == PreSyncMode.EncryptedSide));
+                SyncDecr1andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.DecryptedSide));
+                SyncDecr2andEncr1(p => Assert.IsTrue(p.SyncMode == PreSyncMode.EncryptedSide));
                 Decr1.AssertEqual(new string[] { "a" });
                 Decr2.AssertEqual(new string[] { "a" });
             }
 
-            //Assert.True(false, "Sometimes works sometimes fails depending if th delete comes before the add");
+            //Assert.IsTrue(false, "Sometimes works sometimes fails depending if th delete comes before the add");
         }
 
         static string[] choices = new string[]
@@ -194,15 +195,15 @@ namespace HelixSync.Test
         public void DirectoryAreEqual(DirectoryTester tester, string content, string message)
         {
             if (string.IsNullOrEmpty(message)) {
-                Assert.Equal(new DirectoryTester.DirectoryEntryCollection(content).ToString(), tester.GetContent().ToString());
+                Assert.AreEqual(new DirectoryTester.DirectoryEntryCollection(content).ToString(), tester.GetContent().ToString());
             }
             else {
-                Assert.True(new DirectoryTester.DirectoryEntryCollection(content).ToString() == tester.GetContent().ToString(),
+                Assert.IsTrue(new DirectoryTester.DirectoryEntryCollection(content).ToString() == tester.GetContent().ToString(),
                             message);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void SyncCommand_PurgedFile()
         {
             Decr1.UpdateTo("file1.txt < aa");
@@ -210,9 +211,9 @@ namespace HelixSync.Test
 
             {
                 var syncLog = Decr1AndEncr1SyncLog();
-                Assert.True(syncLog.Length == 1);
-                Assert.True(syncLog[0].DecrFileName == "file1.txt");
-                Assert.True(syncLog[0].EntryType == FileEntryType.File);
+                Assert.IsTrue(syncLog.Length == 1);
+                Assert.IsTrue(syncLog[0].DecrFileName == "file1.txt");
+                Assert.IsTrue(syncLog[0].EntryType == FileEntryType.File);
             }
 
             Decr1.UpdateTo("");
@@ -220,9 +221,9 @@ namespace HelixSync.Test
 
             {
                 var syncLog = Decr1AndEncr1SyncLog();
-                Assert.True(syncLog.Length == 1);
-                Assert.True(syncLog[0].DecrFileName == "file1.txt");
-                Assert.True(syncLog[0].EntryType == FileEntryType.Removed);
+                Assert.IsTrue(syncLog.Length == 1);
+                Assert.IsTrue(syncLog[0].DecrFileName == "file1.txt");
+                Assert.IsTrue(syncLog[0].EntryType == FileEntryType.Removed);
             }
 
             //removes the encr file should trigger a purge
@@ -232,7 +233,7 @@ namespace HelixSync.Test
  
             {
                 var syncLog = Decr1AndEncr1SyncLog();
-                Assert.True(syncLog.Length == 0);
+                Assert.IsTrue(syncLog.Length == 0);
             }
         }
 

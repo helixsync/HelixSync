@@ -552,7 +552,7 @@ namespace HelixSync
             if (string.IsNullOrEmpty(preSyncDetails.EncrFileName))
                 preSyncDetails.EncrFileName = EncrDirectory.FileNameEncoder.EncodeName(preSyncDetails.DecrFileName);
 
-            preSyncDetails.EncrInfo = EncrDirectory.GetFileEntry(preSyncDetails.EncrFileName);
+            preSyncDetails.EncrInfo = EncrDirectory.TryGetFileEntry(preSyncDetails.EncrFileName);
             RefreshPreSyncEncrHeader(preSyncDetails);
 
             if (!string.IsNullOrEmpty(preSyncDetails.DecrFileName))
