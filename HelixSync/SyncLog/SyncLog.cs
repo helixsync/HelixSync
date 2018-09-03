@@ -31,27 +31,7 @@ namespace HelixSync
         {
             SyncLog syncLog = new SyncLog(path);
             syncLog.WhatIf = whatIf;
-            if (File.Exists(path)) //missing file
-            {
-                using (var reader = File.OpenText(path))
-                {
-                    while (!reader.EndOfStream)
-                    {
-                        var line = reader.ReadLine();
-                        if (line.StartsWith("#") || string.IsNullOrEmpty(line))
-                            continue; //comment (ignore)
-
-                        var logEntry = SyncLogEntry.TryParseFromString(line);
-                        if (logEntry != null)
-                        {
-                            syncLog.ToMemory(logEntry);
-                            syncLog.LastEntry = logEntry;
-                        }
-                    }
-                }
-            }
-            if (!whatIf)
-                syncLog.InitializeWriter();
+            syncLog.Reload();
             return syncLog;
         }
 
@@ -83,6 +63,13 @@ namespace HelixSync
         {
             if (WhatIf)
                 throw new InvalidOperationException("Unable to perform action in WhatIf mode");
+
+            if (writer != null)
+            {
+                writer.Dispose();
+                writer = null;
+            }
+
             writer = File.AppendText(path);
             writer.AutoFlush = true;
         }
@@ -115,9 +102,6 @@ namespace HelixSync
         {
             if (writer != null)
             {
-#if !NET_CORE
-                writer.Close();
-#endif
                 writer.Dispose();
                 writer = null;
             }
@@ -134,6 +118,40 @@ namespace HelixSync
             return LogEntriesByKey.Values.GetEnumerator();
         }
 
+        /// <summary>
+        /// Reloads the log
+        /// </summary>
+        public void Reload()
+        {
+            if (writer != null)
+            {
+                writer.Dispose();
+                writer = null;
+            }
+
+            if (File.Exists(path)) //missing file
+            {
+                using (var reader = File.OpenText(path))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var line = reader.ReadLine();
+                        if (line.StartsWith("#") || string.IsNullOrEmpty(line))
+                            continue; //comment (ignore)
+
+                        var logEntry = SyncLogEntry.TryParseFromString(line);
+                        if (logEntry != null)
+                        {
+                            ToMemory(logEntry);
+                            LastEntry = logEntry;
+                        }
+                    }
+                }
+            }
+
+            if (!WhatIf)
+                InitializeWriter();
+        }
 
     }
 }

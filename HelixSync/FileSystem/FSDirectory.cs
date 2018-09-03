@@ -23,11 +23,12 @@ namespace HelixSync.FileSystem
             this.PopulateFromInfo(directoryInfo);
         }
 
-        
 
 
+        private FSEntryCollection children = new FSEntryCollection(HelixUtil.FileSystemCaseSensitive);
         public bool IsLoaded { get; private set; }
         bool IsLoadedDeep { get; set; }
+
         public void Load(bool deep = false)
         {
             if (IsLoadedDeep)
@@ -71,10 +72,6 @@ namespace HelixSync.FileSystem
                 IsLoadedDeep = true;
         }
 
-        private FSEntryCollection children = new FSEntryCollection(HelixUtil.FileSystemCaseSensitive);
-
-
-
         public IEnumerable<FSEntry> GetEntries(SearchOption searchOption = SearchOption.TopDirectoryOnly)
         {
             if (searchOption == SearchOption.AllDirectories)
@@ -99,7 +96,6 @@ namespace HelixSync.FileSystem
         /// <param name="path">Path can be relative to the directory or absolute</param>
         public FSEntry TryGetEntry(string path)
         {
-
             if (path == null)
                 throw new ArgumentNullException(nameof(path));
 
@@ -123,9 +119,19 @@ namespace HelixSync.FileSystem
                     .TryGetEntry(string.Join(HelixUtil.UniversalDirectorySeparatorChar.ToString(), split.Skip(1).ToArray()));
         }
 
+
+        /// <summary>
+        /// Forces an entry to be refreshed based of the Filesystem
+        /// </summary>
         public void RefreshEntry(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                throw new ArgumentNullException(nameof(path));
+
             path = HelixUtil.PathUniversal(path);
+
+            if (Path.IsPathRooted(path))
+                path = RemoveRootFromPath(path, FullName);
 
             var split = path.Split(HelixUtil.UniversalDirectorySeparatorChar);
             FSEntry newEntry;
@@ -172,8 +178,7 @@ namespace HelixSync.FileSystem
                 oldEntry.PopulateFromInfo(newEntry.LastWriteTimeUtc, newEntry.Length);
                 newEntry = oldEntry;
             }
-
-            if (newEntry != null)
+            else if (newEntry != null)
             {
                 children.Add(newEntry);
                 if (split.Length > 1)
@@ -225,6 +230,17 @@ namespace HelixSync.FileSystem
             children.Add(entry);
         }
 
+        /// <summary>
+        /// Clears all of the cached entries
+        /// </summary>
+        public void Reset()
+        {
+            if (WhatIf)
+                throw new InvalidOperationException($"Unable to perform {nameof(Reset)}() when {nameof(WhatIf)}=True");
+            children.Clear();
+            IsLoaded = false;
+            IsLoadedDeep = false;
+        }
         
     }
 

@@ -173,7 +173,10 @@ namespace HelixSync.HelixDirectory
 
         public FSEntry GetFileEntry(string encrFileName)
         {
-            return FSDirectory.TryGetEntry(encrFileName);
+            var entry = FSDirectory.TryGetEntry(encrFileName);
+            if (entry == null)
+                throw new HelixException($"No entry found for {encrFileName}"); //todo: throw more specific exception
+            return entry;
         }
 
         public void Dispose()

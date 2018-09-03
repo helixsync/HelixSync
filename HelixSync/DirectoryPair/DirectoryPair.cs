@@ -174,8 +174,11 @@ namespace HelixSync
         /// <summary>
         /// Returns a list of changes that need to be performed as part of the sync.
         /// </summary>
-        public List<PreSyncDetails> FindChanges(ConsoleEx console = null)
-        {
+        public List<PreSyncDetails> FindChanges(bool reset = true, ConsoleEx console = null)
+        {//todo: disable default for reset
+            if (reset)
+                Reset();
+
             var rng = RandomNumberGenerator.Create();
 
             List<PreSyncDetails> matches = MatchFiles(console)
@@ -583,14 +586,14 @@ namespace HelixSync
             return new SyncLogEntry(header.EntryType, header.FileName, header.LastWriteTimeUtc, encrEntry.RelativePath, encrEntry.LastWriteTimeUtc);
         }
 
-        public SyncLogEntry CreateEntryFromHeader(FileEntry decrFileInfo, FileEntry encrFileInfo)
+        public SyncLogEntry CreateEntryFromHeader(FileEntry decrFileInfo, FSEntry encrFileInfo)
         {
             if (decrFileInfo == null)
                 throw new ArgumentNullException(nameof(decrFileInfo));
             if (encrFileInfo == null)
                 throw new ArgumentNullException(nameof(encrFileInfo));
 
-            SyncLogEntry entry = new SyncLogEntry(decrFileInfo.EntryType, decrFileInfo.FileName, decrFileInfo.LastWriteTimeUtc, encrFileInfo.FileName, encrFileInfo.LastWriteTimeUtc);
+            SyncLogEntry entry = new SyncLogEntry(decrFileInfo.EntryType, decrFileInfo.FileName, decrFileInfo.LastWriteTimeUtc, encrFileInfo.RelativePath, encrFileInfo.LastWriteTimeUtc);
             return entry;
         }
 
@@ -629,10 +632,12 @@ namespace HelixSync
                 {
                     File.SetLastWriteTimeUtc(encrPath, logEntry.EncrModified + TimeSpan.FromMilliseconds(encrTimespanPrecisionMS));
                 }
-                
-                var newLogEntry = CreateEntryFromHeader(header, FileEntry.FromFile(encrPath, EncrDirectory.DirectoryPath));
-                SyncLog.Add(newLogEntry);
+
                 EncrDirectory.FSDirectory.RefreshEntry(encrPath);
+
+                var newLogEntry = CreateEntryFromHeader(header, EncrDirectory.GetFileEntry(entry.EncrFileName));
+                SyncLog.Add(newLogEntry);
+
 
                 return SyncResults.Success();
             }
@@ -671,7 +676,7 @@ namespace HelixSync
                     //todo: get the date on the file system (needed if the filesystem has less precision 
 
                     SyncLog.Add(fileSystemEntry);
-                    DecrDirectory.FSDirectory.RefreshEntry(encrPath);
+                    DecrDirectory.FSDirectory.RefreshEntry(decrPath);
                     return SyncResults.Success();
                 }
             }
@@ -686,6 +691,13 @@ namespace HelixSync
             return SyncResults.Failure(new HelixException($"Invalid sync mode {entry.SyncMode}"));
         }
 
+        public void Reset()
+        {
+            EncrDirectory.FSDirectory.Reset();
+            DecrDirectory.SyncLog.Reload();
+            DecrDirectory.FSDirectory.Reset();
+
+        }
 
         public void Dispose()
         {

@@ -171,7 +171,7 @@ namespace HelixSync
                     decrDirectory.Cleanup(consoleEx);
 
                     consoleEx.WriteLine(VerbosityLevel.Detailed, 0, "Finding changes...");
-                    List<PreSyncDetails> changes = pair.FindChanges(consoleEx);
+                    List<PreSyncDetails> changes = pair.FindChanges(reset: false, console: consoleEx);
 
                     if (changes.Count == 0)
                         consoleEx.WriteLine("--No Changes--");
