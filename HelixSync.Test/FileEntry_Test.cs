@@ -2,20 +2,21 @@
 // the included LICENSE file for full details
 
 using System;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
+    [TestClass]
     public class FileEntry_Test
     {
-        [Fact]
+        [TestMethod]
         public void FileEntryTest_ConvertsSlashes()
         {
             FileEntry a = FileEntry.FromFile("a\\b", null);
-            Assert.Equal("a" + HelixUtil.UniversalDirectorySeparatorChar + "b", a.FileName);
+            Assert.AreEqual("a" + HelixUtil.UniversalDirectorySeparatorChar + "b", a.FileName);
 
             FileEntry b = FileEntry.FromFile("a/b", null);
-            Assert.Equal("a" + HelixUtil.UniversalDirectorySeparatorChar + "b", b.FileName);
+            Assert.AreEqual("a" + HelixUtil.UniversalDirectorySeparatorChar + "b", b.FileName);
         }
     }
 }

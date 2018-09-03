@@ -8,13 +8,14 @@ using System.Text;
 using System.Threading.Tasks;
 using HelixSync;
 using System.IO;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
+    [TestClass]
     public class HelixFileEncryptor_Tests
     {
-        [Fact]
+        [TestMethod]
         public void HelixFileDecryptor_EncryptThenDecrypt()
         {
             using (MemoryStream stream = new MemoryStream())
@@ -27,7 +28,7 @@ namespace HelixSync.Test
                     encryptor.WriteHeader(headerSaved);
                     encryptor.WriteContent("example content");
 
-                    Assert.True(stream.Length > 10);
+                    Assert.IsTrue(stream.Length > 10);
                 }
                 //Assert.IsTrue(stream.CanRead, "stream.CanRead");
                 //Assert.IsTrue(stream.CanWrite, "stream.CanWrite");
@@ -38,14 +39,14 @@ namespace HelixSync.Test
                 {
                     decryptor.Initialize(DerivedBytesProvider.FromPassword("password"));
                     var header2 = decryptor.ReadHeader();
-                    Assert.Equal(headerSaved.FileName, header2.FileName);
+                    Assert.AreEqual(headerSaved.FileName, header2.FileName);
                     var content = decryptor.GetContentString();
-                    Assert.Equal("example content", content);
+                    Assert.AreEqual("example content", content);
                 }
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void HelixFileDecryptor_UnflushedEncryptThrowsException()
         {
             try
@@ -60,7 +61,7 @@ namespace HelixSync.Test
                         encryptor.WriteHeader(headerSaved);
                         encryptor.WriteContent("example content");
 
-                        Assert.True(stream.Length > 10);
+                        Assert.IsTrue(stream.Length > 10);
 
 
                         using (var readStream = new MemoryStream(stream.ToArray(), false))
@@ -68,13 +69,13 @@ namespace HelixSync.Test
                         {
                             decryptor.Initialize(DerivedBytesProvider.FromPassword("password"));
                             var header2 = decryptor.ReadHeader();
-                            Assert.Equal(headerSaved.FileName, header2.FileName);
+                            Assert.AreEqual(headerSaved.FileName, header2.FileName);
                             var content = decryptor.GetContentString();
-                            Assert.Equal("example content", content);
+                            Assert.AreEqual("example content", content);
                         }
                     }
                 }
-                Assert.True(false, "Expected a HelixException to be raised");
+                Assert.IsTrue(false, "Expected a HelixException to be raised");
             }
             catch(HelixException)
             {
@@ -82,7 +83,7 @@ namespace HelixSync.Test
             }
         }
         
-        [Fact]
+        [TestMethod]
         public void HelixFileDecryptor_WrongPassword()
         {
             using (MemoryStream stream = new MemoryStream())
@@ -93,7 +94,7 @@ namespace HelixSync.Test
                 encryptor.WriteHeader(header);
                 encryptor.WriteContent("example content");
                 encryptor.FlushFinalBlock();
-                Assert.True(stream.Length > 10);
+                Assert.IsTrue(stream.Length > 10);
 
                 stream.Position = 0;
                 try
@@ -102,11 +103,11 @@ namespace HelixSync.Test
                     {
                         decryptor.Initialize(DerivedBytesProvider.FromPassword("wrongpassword"));
                         var header2 = decryptor.ReadHeader();
-                        Assert.Equal(header.FileName, header2.FileName);
+                        Assert.AreEqual(header.FileName, header2.FileName);
                         var content = decryptor.GetContentString();
-                        Assert.Equal("example content", content);
+                        Assert.AreEqual("example content", content);
                     }
-                    Assert.True(false, "Expecting InvalidPasswordException");
+                    Assert.IsTrue(false, "Expecting InvalidPasswordException");
                 }
                 catch(InvalidPasswordException)
                 {
@@ -115,7 +116,7 @@ namespace HelixSync.Test
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void HelixFileDecryptor_DecryptHeaderOnlyLargeFile()
         {
             byte[] b = new byte[50000];
@@ -132,7 +133,7 @@ namespace HelixSync.Test
                 encryptor.FlushFinalBlock();
 
                 enc = encryptedStream.ToArray();
-                Assert.True(enc.Length > 50000);
+                Assert.IsTrue(enc.Length > 50000);
             }
 
             using (MemoryStream encryptedStream = new MemoryStream(enc, true))
@@ -140,7 +141,7 @@ namespace HelixSync.Test
             {
                 decryptor.Initialize(DerivedBytesProvider.FromPassword("password"));
                 var header = decryptor.ReadHeader();
-                Assert.NotNull(header);
+                Assert.IsNotNull(header);
                 decryptor.Dispose();
             }
         }

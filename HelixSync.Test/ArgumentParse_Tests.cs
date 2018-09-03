@@ -1,7 +1,8 @@
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
+    [TestClass]
     public class ArgumentParse_Test
     {
 
@@ -17,29 +18,29 @@ namespace HelixSync.Test
             public string Value3 { get; set; }
         }
 
-        [Fact]
+        [TestMethod]
         public void ParseCommandLineArguments_OrdinalPositions()
         {
             var obj = new ExampleObject();
             ArgumentParser.ParseCommandLineArguments(obj, new string[] { "a", "b" });
-            Assert.Equal("a", obj.Value1);
-            Assert.Equal("b", obj.Value2);
+            Assert.AreEqual("a", obj.Value1);
+            Assert.AreEqual("b", obj.Value2);
         }
 
-        [Fact]
+        [TestMethod]
         public void ParseCommandLineArguments_NamedArgument() 
         {
             {
                 var obj = new ExampleObject();
                 ArgumentParser.ParseCommandLineArguments(obj, new string[] { "--Value3", "c" });
-                Assert.Equal("c", obj.Value3);
+                Assert.AreEqual("c", obj.Value3);
             }
             {
                 var obj = new ExampleObject();
                 ArgumentParser.ParseCommandLineArguments(obj, new string[] { "--Value3", "c", "-Value1", "a" });
-                Assert.Equal("a", obj.Value1);
-                Assert.True(string.IsNullOrEmpty(obj.Value2));
-                Assert.Equal("c", obj.Value3);
+                Assert.AreEqual("a", obj.Value1);
+                Assert.IsTrue(string.IsNullOrEmpty(obj.Value2));
+                Assert.AreEqual("c", obj.Value3);
             }
         }
 
@@ -55,13 +56,13 @@ namespace HelixSync.Test
             public EnumDefinition EnumValue {get;set;}
         }
 
-        [Fact]
+        [TestMethod]
         public void ParseCommandLineArguments_EnumValue() 
         {
             {
                 var obj = new EnumClass();
                 ArgumentParser.ParseCommandLineArguments(obj, new string[] { "--EnumValue", "Three" });
-                Assert.Equal(EnumDefinition.Three, obj.EnumValue);
+                Assert.AreEqual(EnumDefinition.Three, obj.EnumValue);
             }
         }
 

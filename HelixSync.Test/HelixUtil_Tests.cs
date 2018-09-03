@@ -8,23 +8,23 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
-
+    [TestClass]
     public class HelixUtil_Tests
     {
-        [Fact]
+        [TestMethod]
         public void HelixUtil_RemoveRootFromPath()
         {
-            Assert.Equal(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), @"c:"));
-            Assert.Equal(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), Util.Path(@"c:\")));
-            Assert.Equal(Util.Path(@"aa\bb"), HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @""));
-            Assert.Equal(@"bb", HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @"aa"));
+            Assert.AreEqual(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), @"c:"));
+            Assert.AreEqual(@"test", HelixUtil.RemoveRootFromPath(Util.Path(@"c:\test"), Util.Path(@"c:\")));
+            Assert.AreEqual(Util.Path(@"aa\bb"), HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @""));
+            Assert.AreEqual(@"bb", HelixUtil.RemoveRootFromPath(Util.Path(@"aa\bb"), @"aa"));
         }
 
-        [Fact]
+        [TestMethod]
         public void HelixUtil_GetExactPathName()
         {
             
@@ -40,16 +40,16 @@ namespace HelixSync.Test
                 if (File.Exists(@"aa\ABCDEF~1")) //only tests on certain file systems with DOS 8.3 name support
                 {
                     var exactPath = HelixUtil.GetExactPathName(@"aa\ABCDEF~1");
-                    Assert.Equal(@"AA\ABCDEFGHIJKLMNOP", exactPath);
+                    Assert.AreEqual(@"AA\ABCDEFGHIJKLMNOP", exactPath);
                 }
 
                 {
                     var exactPath = HelixUtil.GetExactPathName(@"aa\a1\a2");
-                    Assert.Equal(@"AA\A1\A2", exactPath);
+                    Assert.AreEqual(@"AA\A1\A2", exactPath);
                 }
                 {
                     var exactPath = HelixUtil.GetExactPathName(@"aa\aa");
-                    Assert.Equal(@"AA\AA", exactPath);
+                    Assert.AreEqual(@"AA\AA", exactPath);
                 }
 
             }

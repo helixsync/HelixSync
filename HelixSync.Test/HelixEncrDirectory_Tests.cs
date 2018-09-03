@@ -9,11 +9,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using HelixSync.HelixDirectory;
 
 namespace HelixSync.Test
 {
+    [TestClass]
     public class HelixEncrDirectory_Tests : IDisposable
     {
         public HelixEncrDirectory_Tests(){
@@ -34,7 +35,7 @@ namespace HelixSync.Test
         }
 
 
-        [Fact]
+        [TestMethod]
         public void HelixEncrDirectory_NewThenLoad()
         {
             Directory.CreateDirectory("hxdir");

@@ -6,18 +6,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
+    [TestClass]
     public class ByteBlock_Tests
     {
-        [Fact]
+        [TestMethod]
         public void ByteBlock_CompareConstantTime_SimpleZeroOneTest()
         {
-            Assert.Equal(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 0 }), 0);
-            Assert.Equal(ByteBlock.CompareConstantTime(new byte[] { 1 }, new byte[] { 0 }), 1);
-            Assert.Equal(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 1 }), -1);            
+            Assert.AreEqual(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 0 }), 0);
+            Assert.AreEqual(ByteBlock.CompareConstantTime(new byte[] { 1 }, new byte[] { 0 }), 1);
+            Assert.AreEqual(ByteBlock.CompareConstantTime(new byte[] { 0 }, new byte[] { 1 }), -1);            
         }
 
 #if FSCHECK

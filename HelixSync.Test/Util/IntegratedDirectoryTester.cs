@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
@@ -28,10 +28,10 @@ namespace HelixSync.Test
             Decr2.Clear(true);
             Encr1.Clear(true);
             Encr2.Clear(true);
-            Assert.False(Directory.Exists(Decr1.DirectoryPath));
-            Assert.False(Directory.Exists(Decr2.DirectoryPath));
-            Assert.False(Directory.Exists(Encr1.DirectoryPath));
-            Assert.False(Directory.Exists(Encr2.DirectoryPath));
+            Assert.IsFalse(Directory.Exists(Decr1.DirectoryPath));
+            Assert.IsFalse(Directory.Exists(Decr2.DirectoryPath));
+            Assert.IsFalse(Directory.Exists(Encr1.DirectoryPath));
+            Assert.IsFalse(Directory.Exists(Encr2.DirectoryPath));
         }
 
 

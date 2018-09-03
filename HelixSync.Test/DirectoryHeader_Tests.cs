@@ -9,13 +9,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace HelixSync.Test
 {
+    [TestClass]
     public class DirectoryHeader_Tests : IDisposable
     {
-        public DirectoryHeader_Tests ()
+        public DirectoryHeader_Tests()
         {
             ResetDirectory();
         }
@@ -30,7 +31,7 @@ namespace HelixSync.Test
             System.IO.Directory.SetCurrentDirectory(Path.GetDirectoryName(this.GetType().GetTypeInfo().Assembly.Location));
         }
 
-        [Fact]
+        [TestMethod]
         public void DirectoryHeader_NewSaveLoad()
         {
             var newHeader = DirectoryHeader.New();
@@ -41,14 +42,14 @@ namespace HelixSync.Test
 
             var loadHeader = DirectoryHeader.Load("header.hx", DerivedBytesProvider.FromPassword("password"));
 
-            //Assert.Equal(newHeader.DerivedBytesProvider.GetDerivedBytes().Key.ToHex(), loadHeader.DerivedBytesProvider.Key.ToHex());
-            //Assert.Equal(newHeader.DerivedBytesProvider.GetDerivedBytes().Salt.ToHex(), loadHeader.DerivedBytesProvider.Salt.ToHex());
-            Assert.Equal(newHeader.FileNameKey.ToHex(), loadHeader.FileNameKey.ToHex());
-            Assert.Equal(newHeader.DirectoryId, loadHeader.DirectoryId);
+            //Assert.AreEqual(newHeader.DerivedBytesProvider.GetDerivedBytes().Key.ToHex(), loadHeader.DerivedBytesProvider.Key.ToHex());
+            //Assert.AreEqual(newHeader.DerivedBytesProvider.GetDerivedBytes().Salt.ToHex(), loadHeader.DerivedBytesProvider.Salt.ToHex());
+            Assert.AreEqual(newHeader.FileNameKey.ToHex(), loadHeader.FileNameKey.ToHex());
+            Assert.AreEqual(newHeader.DirectoryId, loadHeader.DirectoryId);
             File.Delete("header.hx");
         }
 
-        [Fact]
+        [TestMethod]
         public void DirectoryHeader_ThrowsExceptionWhenLoading()
         {
             var newHeader = DirectoryHeader.New();
@@ -59,7 +60,7 @@ namespace HelixSync.Test
             try
             {
                 DirectoryHeader.Load("header.hx", DerivedBytesProvider.FromPassword("password"));
-                Assert.True(false, "Did not detect curruption");
+                Assert.IsTrue(false, "Did not detect curruption");
             }
             catch (HelixException)
             {
