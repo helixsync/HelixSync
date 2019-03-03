@@ -15,26 +15,23 @@ namespace HelixSync
 {
     public class DirectoryPair : IDisposable
     {
-        bool WhatIf;
-        private string EncrDirectoryPath;
+        readonly bool WhatIf;
 
         public DirectoryPair(HelixEncrDirectory encrDirectory, HelixDecrDirectory decrDirectory, bool whatIf = false)
         {
             if (encrDirectory == null)
                 throw new ArgumentNullException(nameof(encrDirectory));
-            if (!whatIf && !encrDirectory.IsOpen)
+            if (!encrDirectory.IsOpen)
                 throw new ArgumentException("EncrDirectory must be open first", nameof(encrDirectory));
             if (decrDirectory == null)
                 throw new ArgumentNullException(nameof(decrDirectory));
-            if (!whatIf && !decrDirectory.IsOpen)
+            if (!decrDirectory.IsOpen)
                 throw new ArgumentException("DecrDirectory must be open first", nameof(decrDirectory));
             if (encrDirectory.IsOpen && encrDirectory.Header.DirectoryId != decrDirectory.EncrDirectoryId)
                 throw new InvalidOperationException("DecrDirectory and EncrDirectory's Directory Id do not match");
 
             WhatIf = whatIf;
             EncrDirectory = encrDirectory;
-            EncrDirectoryPath = encrDirectory.DirectoryPath;
-
             DecrDirectory = decrDirectory;
         }
 
@@ -249,7 +246,7 @@ namespace HelixSync
             Dictionary<PreSyncDetails, List<PreSyncDetails>> DependParentToChild = new Dictionary<PreSyncDetails, List<PreSyncDetails>>();
             List<PreSyncDetails> NoDependents = new List<PreSyncDetails>();
 
-            Action<PreSyncDetails, PreSyncDetails> AddDependent = (child, parent) =>
+            void AddDependent(PreSyncDetails child, PreSyncDetails parent)
             {
                 if (!DependChildToParent.ContainsKey(child))
                     DependChildToParent.Add(child, new List<PreSyncDetails>());
@@ -258,9 +255,7 @@ namespace HelixSync
 
                 DependParentToChild[parent].Add(child);
                 DependChildToParent[child].Add(parent);
-
-                //NoDependents.Remove(child);
-            };
+            }
 
             foreach (var item in list)
             {
@@ -361,7 +356,7 @@ namespace HelixSync
             if (preSyncDetails == null)
                 throw new ArgumentNullException(nameof(preSyncDetails));
 
-            string encrFullPath = Path.Combine(EncrDirectoryPath, HelixUtil.PathNative(preSyncDetails.EncrFileName));
+            string encrFullPath = Path.Combine(EncrDirectory.DirectoryPath, HelixUtil.PathNative(preSyncDetails.EncrFileName));
             if (File.Exists(encrFullPath))
             {
                 preSyncDetails.EncrHeader = HelixFile.DecryptHeader(encrFullPath, EncrDirectory.DerivedBytesProvider);
@@ -574,7 +569,7 @@ namespace HelixSync
         }
         public SyncLogEntry CreateNewLogEntryFromEncrPath(string encrFileName)
         {
-            string encrFilePath = Path.Combine(EncrDirectoryPath, encrFileName);
+            string encrFilePath = Path.Combine(EncrDirectory.DirectoryPath, encrFileName);
 
             FSEntry encrEntry = EncrDirectory.GetFileEntry(encrFileName);
 

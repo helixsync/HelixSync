@@ -16,7 +16,7 @@ namespace HelixSync
 
         private Dictionary<string, SyncLogEntry> LogEntriesByKey = new Dictionary<string, SyncLogEntry>();
 
-        private string path;
+        private readonly string path;
         private StreamWriter writer;
 
         public SyncLogEntry LastEntry { get; private set; }

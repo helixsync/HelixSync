@@ -184,6 +184,9 @@ namespace HelixSync.FileSystem
             return HelixUtil.PathNative(Path.Combine(this.FullName, path));
         }
 
+        /// <summary>
+        /// Returns a path relative to the root, in native format
+        /// </summary>
         public string PathRelative(string path)
         {
             if (path == null)

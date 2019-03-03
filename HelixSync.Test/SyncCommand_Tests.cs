@@ -37,8 +37,7 @@ namespace HelixSync.Test
             ConsoleEx console = new ConsoleEx();
             console.BeforeWriteLine = (o) =>
             {
-                PreSyncDetails preSync = o as PreSyncDetails;
-                if (preSync != null)
+                if (o is PreSyncDetails preSync)
                     onPreSyncDetails?.Invoke(preSync);
                 System.Diagnostics.Debug.WriteLine(o);
             };
