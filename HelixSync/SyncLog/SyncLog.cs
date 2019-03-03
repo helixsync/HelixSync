@@ -129,7 +129,7 @@ namespace HelixSync
                 writer = null;
             }
 
-            if (File.Exists(path)) //missing file
+            if (File.Exists(path))
             {
                 using (var reader = File.OpenText(path))
                 {

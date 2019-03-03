@@ -4,6 +4,7 @@
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using HelixSync.Commands;
 
 namespace HelixSync
 {
@@ -35,8 +36,14 @@ namespace HelixSync
         public string[] KeyFile { get; set; }
 
         [Argument(Recommended=true)]
+        [Description("Sets the detail level for logging messages")]
         public VerbosityLevel Verbosity {get; set;}
-        
+
+        //todo: implement Direction
+        //[Argument(Recommended = true)]
+        //[Description("Bidirectionaly syncs two ways, otherwise forces a one way sync")]
+        //public SyncDirection Direction { get; set; } = SyncDirection.Bidirectional;
+
         public override string ToString()
         {
             return string.Format("[SyncOptions: DecrDirectory={0}, EncrDirectory={1}, Password={2}]", DecrDirectory, EncrDirectory, Password);

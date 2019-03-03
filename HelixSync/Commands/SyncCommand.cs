@@ -34,7 +34,7 @@ namespace HelixSync
                 consoleEx.WriteLine("** WhatIf Mode - No Changes Made **");
 
 
-            using (HelixEncrDirectory encrDirectory = new HelixEncrDirectory(options.EncrDirectory, options.WhatIf))
+            using (HelixEncrDirectory encrDirectory = new HelixEncrDirectory(options.EncrDirectory, whatIf: options.WhatIf))
             using (HelixDecrDirectory decrDirectory = new HelixDecrDirectory(options.DecrDirectory, whatIf: options.WhatIf))
             {
                 DerivedBytesProvider derivedBytesProvider = DerivedBytesProvider.FromPassword(options.Password, options.KeyFile);
@@ -49,6 +49,7 @@ namespace HelixSync
                             consoleEx.WriteErrorLine(".." + warning);
                         return -1;
                     }
+
                     consoleEx.WriteLine("Encrypted Directory: Needs Initialization");
                     foreach (string warning in warnings)
                         consoleEx.WriteLine(".." + warning);
@@ -83,23 +84,23 @@ namespace HelixSync
                     }
 
                     consoleEx.WriteLine();
-                    if (options.WhatIf)
-                    {
-                        consoleEx.WriteLine("** WhatIf Mode - No Changes Made **");
-                        consoleEx.WriteLine("Initialized Encrypted Directory (" + DirectoryHeader.EmptyDirectoryId().Substring(0, 6) + "...)");
-                        decrDirectory.EncrDirectoryId = DirectoryHeader.EmptyDirectoryId();
-                        consoleEx.WriteLine("Initialized Decrypted Directory");
-                    }
-                    else
-                    {
+                    //if (options.WhatIf)
+                    //{
+                    //    consoleEx.WriteLine("** WhatIf Mode - No Changes Made **");
+                    //    consoleEx.WriteLine("Initialized Encrypted Directory (" + DirectoryHeader.EmptyDirectoryId().Substring(0, 6) + "...)");
+                    //    decrDirectory.EncrDirectoryId = DirectoryHeader.EmptyDirectoryId();
+                    //    consoleEx.WriteLine("Initialized Decrypted Directory");
+                    //}
+                    //else
+                    //{
                         encrDirectory.Initialize(derivedBytesProvider, fileVersion);
                         encrDirectory.Open(derivedBytesProvider);
                         consoleEx.WriteLine("Initialized Encrypted Directory (" + encrDirectory.Header.DirectoryId.Substring(0, 6) + "...)");
                         decrDirectory.EncrDirectoryId = encrDirectory.Header.DirectoryId;
                         decrDirectory.Initialize();
                         consoleEx.WriteLine("Initialized Decrypted Directory");
-                        decrDirectory.Open(options.WhatIf);
-                    }
+                        decrDirectory.Open();
+                    //}
 
                 }
                 else
@@ -147,12 +148,12 @@ namespace HelixSync
                         {
                             decrDirectory.Initialize();
                             consoleEx.WriteLine("Initialized Decrypted Directory");
-                            decrDirectory.Open(options.WhatIf);
+                            decrDirectory.Open();
                         }
                     }
                     else
                     {
-                        decrDirectory.Open(options.WhatIf);
+                        decrDirectory.Open();
                         consoleEx.WriteLine("Opened Decrypted Directory");
                     }
                 }

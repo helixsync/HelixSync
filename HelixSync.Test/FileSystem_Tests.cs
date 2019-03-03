@@ -31,7 +31,7 @@ namespace HelixSync.Test
                 Directory.CreateDirectory($@"AA\AB");
                 File.WriteAllText(@"AA\AB\xyz.txt", "example");
 
-                var fsDirectory = new FSDirectory("AA", true);
+                var fsDirectory = new FSDirectory("AA", true, true);
                 var child = fsDirectory.TryGetEntry(@"AB\xyz.txt");
 
                 Assert.AreEqual(@"AB/xyz.txt", child.RelativePath);
@@ -60,7 +60,7 @@ namespace HelixSync.Test
                 Directory.CreateDirectory($@"AA\AB");
 
                 //Test
-                var fsDirectory = new FSDirectory("AA", false);
+                var fsDirectory = new FSDirectory("AA", false, true);
                 (fsDirectory.TryGetEntry("abc.txt") as FSFile).MoveTo(@"AB\def.txt");
 
                 //Check
@@ -93,7 +93,7 @@ namespace HelixSync.Test
                 Directory.CreateDirectory($@"AA\AB");
 
                 //Test
-                var fsDirectory = new FSDirectory("AA", true);
+                var fsDirectory = new FSDirectory("AA", true, true);
                 (fsDirectory.TryGetEntry("abc.txt") as FSFile).MoveTo(@"AB\def.txt");
 
                 //Check

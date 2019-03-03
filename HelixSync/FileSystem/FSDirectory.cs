@@ -11,16 +11,23 @@ namespace HelixSync.FileSystem
     ///<summary>
     public class FSDirectory : FSEntry, IFSDirectoryCore
     {
-        public FSDirectory(string path, bool whatIf)
-            : this(new DirectoryInfo(path), null, whatIf)
+        public FSDirectory(string path, bool whatIf, bool isRoot)
+            : this(new DirectoryInfo(path), null, whatIf, isRoot)
         {
 
         }
 
-        internal FSDirectory(DirectoryInfo directoryInfo, FSDirectory parent, bool whatIf)
+        public FSDirectory(string path, FSDirectory parent)
+            : base(path, parent, parent.WhatIf)
+        {
+
+        }
+
+        internal FSDirectory(DirectoryInfo directoryInfo, FSDirectory parent, bool whatIf, bool isRoot)
             : base(directoryInfo.FullName, parent, whatIf)
         {
             this.PopulateFromInfo(directoryInfo);
+            this.IsRoot = isRoot;
         }
 
 
@@ -28,6 +35,7 @@ namespace HelixSync.FileSystem
         private FSEntryCollection children = new FSEntryCollection(HelixUtil.FileSystemCaseSensitive);
         public bool IsLoaded { get; private set; }
         bool IsLoadedDeep { get; set; }
+        public bool IsRoot { get; }
 
         public void Load(bool deep = false)
         {
@@ -53,6 +61,12 @@ namespace HelixSync.FileSystem
                 return;
             }
 
+            if (!Exists)
+            {
+                IsLoadedDeep = true;
+                return;
+            }
+
             PopulateFromInfo(directoryInfo);
             var IOChildren = (directoryInfo).EnumerateFileSystemInfos().ToArray();
             foreach (var entry in IOChildren)
@@ -61,7 +75,7 @@ namespace HelixSync.FileSystem
                     children.Add(new FSFile(childFileInfo, this, WhatIf));
                 else if (entry is DirectoryInfo childDirectoryInfo)
                 {
-                    var newChild = new FSDirectory(childDirectoryInfo, this, WhatIf);
+                    var newChild = new FSDirectory(childDirectoryInfo, this, WhatIf, isRoot: false);
                     children.Add(newChild);
                     if (deep)
                         newChild.Load(childDirectoryInfo, true);
@@ -99,10 +113,7 @@ namespace HelixSync.FileSystem
             if (path == null)
                 throw new ArgumentNullException(nameof(path));
 
-            path = HelixUtil.PathUniversal(path);
-
-            if (Path.IsPathRooted(path))
-                path = RemoveRootFromPath(path, FullName);
+            path = PathRelative(path);
 
             if (path == "")
                 return this;
@@ -117,6 +128,97 @@ namespace HelixSync.FileSystem
             else
                 return (children[split[0]] as FSDirectory)?
                     .TryGetEntry(string.Join(HelixUtil.UniversalDirectorySeparatorChar.ToString(), split.Skip(1).ToArray()));
+        }
+
+        internal void WhatIfAddFile(string relativeName, int fileSize)
+        {
+            if (!WhatIf)
+                throw new InvalidOperationException("FSDirectory not in WhatIf mode");
+
+            FSFile entry = new FSFile(PathFull(relativeName), GetDirectory(PathDirectory(relativeName)), this.WhatIf);
+            entry.Parent.children.Add(entry);
+        }
+
+        public FSDirectory GetDirectory(string path)
+        {
+            var entry = this.TryGetEntry(path);
+            if (entry is FSDirectory entryDirectory)
+                return entryDirectory;
+            else
+                throw new DirectoryNotFoundException();
+        }
+
+        internal void WhatIfAddDirectory(string relativeName)
+        {
+            if (!WhatIf)
+                throw new InvalidOperationException("FSDirectory not in WhatIf mode");
+
+            var entry = new FSDirectory(PathFull(relativeName), this.GetDirectory(PathDirectory(relativeName)));
+            entry.Parent.children.Add(entry);
+        }
+
+        internal void CreateDirectory(string path)
+        {
+            if (!WhatIf)
+            {
+                Directory.CreateDirectory(PathFull(path));
+                RefreshEntry(PathFull(path));
+            }
+            else
+            {
+                WhatIfAddDirectory(path);
+            }
+
+        }
+
+        public string PathFull(string path)
+        {
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
+
+            path = HelixUtil.PathUniversal(path);
+
+            if (Path.IsPathRooted(path))
+                path = RemoveRootFromPath(path, FullName);
+
+            return HelixUtil.PathNative(Path.Combine(this.FullName, path));
+        }
+
+        public string PathRelative(string path)
+        {
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
+
+            path = HelixUtil.PathUniversal(path);
+
+            if (Path.IsPathRooted(path))
+                path = RemoveRootFromPath(path, FullName);
+            return path;
+        }
+
+        public string PathDirectory(string path)
+        {
+            var parts = PathRelative(path).Split(HelixUtil.UniversalDirectorySeparatorChar).ToList();
+            if (parts.Count == 1)
+                return "";
+            else
+            {
+                parts.RemoveAt(parts.Count - 1);
+                return String.Join(HelixUtil.UniversalDirectorySeparatorChar, parts);
+            }
+        }
+
+
+        /// <summary>
+        /// Creates the directory (does in virtualy in whatif mode)
+        /// </summary>
+        public void Create()
+        {
+            if (!WhatIf)
+                Directory.CreateDirectory(this.FullName);
+
+            this.Exists = true;
+            this.IsLoaded = true;
         }
 
 
@@ -153,7 +255,7 @@ namespace HelixSync.FileSystem
 
             if (info is DirectoryInfo dirInfo)
             {
-                newEntry = new FSDirectory(dirInfo, this, this.WhatIf);
+                newEntry = new FSDirectory(dirInfo, this, this.WhatIf, isRoot: false);
             }
             else if (info is FileInfo fileInfo)
             {
@@ -190,7 +292,7 @@ namespace HelixSync.FileSystem
         /// Returns if the file or directory exists.
         /// </summary>
         /// <param name="path">Path can be relative to the directory or absolute</param>
-        public bool Exists(string path)
+        public bool ChildExists(string path)
         {
             path = HelixUtil.PathUniversal(path);
             return TryGetEntry(path) != null;
@@ -208,6 +310,7 @@ namespace HelixSync.FileSystem
             if (!WhatIf)
                 Directory.Delete(FullName, recursive);
             ((IFSDirectoryCore)Parent).Remove(this);
+            this.Exists = false;
         }
 
 
@@ -241,7 +344,6 @@ namespace HelixSync.FileSystem
             IsLoaded = false;
             IsLoadedDeep = false;
         }
-        
     }
 
 

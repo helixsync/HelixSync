@@ -42,7 +42,7 @@ namespace HelixSync.HelixDirectory
                 var destinationRelativePath = Path.ChangeExtension(file.RelativePath, null);
 
                 console.WriteLine(VerbosityLevel.Detailed, 3, $"Incomplete file, restoring backup {file.RelativePath} => {destinationRelativePath}");
-                if (directory.Exists(destinationRelativePath))
+                if (directory.ChildExists(destinationRelativePath))
                 {
                     console.WriteLine(VerbosityLevel.Diagnostic, 4, $"Removing {destinationRelativePath}");
                     (directory.TryGetEntry(destinationRelativePath) as FSFile).Delete();

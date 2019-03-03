@@ -49,25 +49,23 @@ namespace HelixSync.FileSystem
                 m_LastWriteTimeUtc = HelixUtil.TruncateTicks(value); 
             }
         }
-
-        private long m_Length;
-        public long Length
-        {
-            get { return m_Length; }
-        }
+        public long Length { get; private set; }
+        public bool Exists { get; protected set; }
 
         protected virtual void PopulateFromInfo(FileSystemInfo info)
         {
             if (this is FSDirectory)
             {
                 this.m_LastWriteTimeUtc = DateTime.MinValue;
-                this.m_Length = 0;
+                this.Length = 0;
             }
             else 
             {
                 this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(info.LastWriteTimeUtc);
-                this.m_Length = (info as FileInfo)?.Length ?? ((long)0);
+                this.Length = (info as FileInfo)?.Length ?? ((long)0);
             }
+
+            this.Exists = info.Exists;
         }
 
         internal virtual void PopulateFromInfo(DateTime lastWriteTimeUtc, long length)
@@ -75,12 +73,12 @@ namespace HelixSync.FileSystem
             if (this is FSDirectory)
             {
                 this.m_LastWriteTimeUtc = DateTime.MinValue;
-                this.m_Length = 0;
+                this.Length = 0;
             }
             else 
             {
                 this.m_LastWriteTimeUtc = HelixUtil.TruncateTicks(lastWriteTimeUtc);
-                this.m_Length = length;
+                this.Length = length;
             }
         }
 
@@ -120,6 +118,8 @@ namespace HelixSync.FileSystem
 
             return path.Substring(root.Length);
         }
+
+
 
         public FileEntryType EntryType
         {

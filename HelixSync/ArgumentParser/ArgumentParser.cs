@@ -85,6 +85,17 @@ namespace HelixSync
 
             public bool Advanced => propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.Advanced == true;
 
+            public bool IsEnum => propertyInfo.PropertyType.IsEnum;
+
+            public string[] GetEnumOptions()
+            {
+
+                if (!IsEnum)
+                    throw new NotSupportedException("Argument is not an Enum");
+                return propertyInfo.PropertyType.GetEnumValues().OfType<object>().Select(o => o.ToString()).ToArray();
+
+            }
+
             public override string ToString()
             {
                 if (OrdinalPosition > 0 && OrdinalPosition != int.MaxValue)
@@ -144,9 +155,9 @@ namespace HelixSync
             if (args.Any(a => !a.Required && !a.Recommended && !a.IsOrdinal))
             {
                 if (visitedArgs.Any())
-                    sb.Append("[OtherOptions] ");
+                    sb.Append("[...] ");
                 else
-                    sb.Append("[Options] ");
+                    sb.Append("[...] ");
             }
 
             bool notFirst = false;
@@ -191,6 +202,9 @@ namespace HelixSync
 
                 if (arg.IsBool)
                     flags += "[bool]";
+
+                if (arg.IsEnum)
+                    sb.AppendLine("" + string.Join(", ", arg.GetEnumOptions().Select(o => "\"" + o + "\"")));
 
                 if (!string.IsNullOrEmpty(flags))
                     flags += " ";

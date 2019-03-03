@@ -20,7 +20,7 @@ namespace HelixSync.HelixDirectory
 
             this.DirectoryPath = HelixUtil.PathNative(directoryPath);
             this.WhatIf = whatIf;
-            this.FSDirectory = new FSDirectory(directoryPath, whatIf);
+            this.FSDirectory = new FSDirectory(directoryPath, whatIf, isRoot: true);
         }
 
         public FSDirectory FSDirectory { get; private set; }
@@ -36,7 +36,7 @@ namespace HelixSync.HelixDirectory
         
         public bool IsInitialized()
         {
-            if (!File.Exists(Path.Combine(DirectoryPath, HelixConsts.HeaderFileName)))
+            if (!FSDirectory.ChildExists(HelixConsts.HeaderFileName))
                 return false;
 
             return true;
@@ -106,12 +106,22 @@ namespace HelixSync.HelixDirectory
             if (IsInitialized())
                 throw new InvalidOperationException("Directory is already initialized");
 
-            if (System.IO.Directory.Exists(DirectoryPath) && System.IO.Directory.GetFileSystemEntries(DirectoryPath).Any())
+            
+            if (FSDirectory.Exists && FSDirectory.GetEntries().Any())
                 throw new IOException("Unable to initialize new Helix Directory, directory is not empty");
 
-            System.IO.Directory.CreateDirectory(DirectoryPath);
+            if (!FSDirectory.Exists)
+                FSDirectory.Create();
+
             DirectoryHeader header = DirectoryHeader.New();
-            header.Save(Path.Combine(DirectoryPath, HelixConsts.HeaderFileName), derivedBytesProvider, fileVersion);
+            if (FSDirectory.WhatIf)
+                FSDirectory.WhatIfAddFile(HelixConsts.HeaderFileName, 10);
+            else
+            {
+                header.Save(Path.Combine(DirectoryPath, HelixConsts.HeaderFileName), derivedBytesProvider, fileVersion);
+                FSDirectory.RefreshEntry(HelixConsts.HeaderFileName);
+            }
+            this.Header = header;
             return header;
         }
 
@@ -130,8 +140,11 @@ namespace HelixSync.HelixDirectory
             if (IsOpen)
                 throw new InvalidOperationException("Directory is already opened");
 
-            //Existing
-            Header = DirectoryHeader.Load(Path.Combine(DirectoryPath, HelixConsts.HeaderFileName), derivedBytesProvider);
+            if (Header == null)
+            {
+                //Existing
+                Header = DirectoryHeader.Load(Path.Combine(DirectoryPath, HelixConsts.HeaderFileName), derivedBytesProvider);
+            }
 
             this.DerivedBytesProvider = derivedBytesProvider;
             this.FileNameEncoder = new FileNameEncoder(Header.FileNameKey);

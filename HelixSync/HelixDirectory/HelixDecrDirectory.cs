@@ -20,7 +20,7 @@ namespace HelixSync.HelixDirectory
 
             this.DirectoryPath = HelixUtil.PathNative(directoryPath);
             this.EncrDirectoryId = encrDirectoryId;
-            this.FSDirectory = new FSDirectory(directoryPath, whatIf);
+            this.FSDirectory = new FSDirectory(directoryPath, whatIf, isRoot: true);
         }
 
         string m_EncrDirectoryId = null;
@@ -41,12 +41,12 @@ namespace HelixSync.HelixDirectory
 
         private string GetSyncLogPath()
         {
-            return Path.Combine(DirectoryPath, HelixConsts.SyncLogDirectory, EncrDirectoryId + HelixConsts.SyncLogExtention);
+            return Path.Combine(HelixConsts.SyncLogDirectory, EncrDirectoryId + HelixConsts.SyncLogExtention);
         }
 
         public bool IsInitialized()
         {
-            return File.Exists(GetSyncLogPath());
+            return FSDirectory.ChildExists(GetSyncLogPath());
         }
 
         public string[] PreInitializationWarnings(out bool error)
@@ -117,16 +117,25 @@ namespace HelixSync.HelixDirectory
             if (IsInitialized())
                 throw new InvalidOperationException("Directory has already been initialized");
 
-            Directory.CreateDirectory(DirectoryPath);
-            Directory.CreateDirectory(Path.GetDirectoryName(GetSyncLogPath()));
-            using (var stream = File.CreateText(GetSyncLogPath()))
+
+            FSDirectory.Create();
+            FSDirectory.CreateDirectory(HelixConsts.SyncLogDirectory);
+
+            if (FSDirectory.WhatIf)
             {
-                stream.WriteLine(HelixConsts.SyncLogHeader);
+                FSDirectory.WhatIfAddFile(GetSyncLogPath(), 10);
+            }
+            else
+            {
+                using (var stream = File.CreateText(FSDirectory.PathFull(GetSyncLogPath())))
+                {
+                    stream.WriteLine(HelixConsts.SyncLogHeader);
+                }
             }
         }
 
         public bool IsOpen { get; private set; }
-        public void Open(bool whatIf = false)
+        public void Open()
         {
             if (string.IsNullOrEmpty(EncrDirectoryId))
                 throw new InvalidOperationException("EncrDirectoryID must be set prior to initialization");
@@ -135,7 +144,7 @@ namespace HelixSync.HelixDirectory
             if (IsOpen)
                 throw new InvalidOperationException("Directory is already opened");
                 
-            SyncLog = SyncLog.GetLog(GetSyncLogPath(), whatIf);
+            SyncLog = SyncLog.GetLog(FSDirectory.PathFull(GetSyncLogPath()), FSDirectory.WhatIf);
             IsOpen = true;
         }
 

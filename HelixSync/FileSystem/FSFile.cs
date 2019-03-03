@@ -14,7 +14,7 @@ namespace HelixSync.FileSystem
         }
 
 
-        private FSFile(string fullName, FSDirectory parent, bool whatIf)
+        internal FSFile(string fullName, FSDirectory parent, bool whatIf)
             : base(fullName, parent, whatIf)
         {
 
@@ -62,6 +62,7 @@ namespace HelixSync.FileSystem
             if (!WhatIf)
                 File.Delete(HelixUtil.PathNative(this.FullName));
             ((IFSDirectoryCore)Parent).Remove(this);
+            this.Exists = false;
         }
     }
 }
