@@ -41,8 +41,7 @@ namespace HelixSync
 
                 if (!encrDirectory.IsInitialized())
                 {
-                    bool error;
-                    string[] warnings = encrDirectory.PreInitializationWarnings(out error);
+                    string[] warnings = encrDirectory.PreInitializationWarnings(out bool error);
                     if (error)
                     {
                         consoleEx.WriteErrorLine("Encrypted Directory: Unable To Initialize");
@@ -111,8 +110,7 @@ namespace HelixSync
 
                     if (!decrDirectory.IsInitialized())
                     {
-                        bool error;
-                        string[] warnings = new HelixDecrDirectory(options.DecrDirectory, DirectoryHeader.NewDirectoryId()).PreInitializationWarnings(out error);
+                        string[] warnings = new HelixDecrDirectory(options.DecrDirectory, DirectoryHeader.NewDirectoryId()).PreInitializationWarnings(out bool error);
                         if (error)
                         {
                             consoleEx.WriteErrorLine("Decrypted Directory: Unable to initialize");

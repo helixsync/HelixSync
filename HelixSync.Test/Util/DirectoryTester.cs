@@ -64,10 +64,10 @@ namespace HelixSync.Test
 
             public override string ToString()
             {
-                return FileName + (IsDirectory ? "/" : "") + ":" + (Time == null ? "*" : Time.ToString()) + (IsDirectory ? "" : " < " + (Content == null ? "*" : Content));
+                return FileName + (IsDirectory ? "/" : "") + ":" + (Time == null ? "*" : Time.ToString()) + (IsDirectory ? "" : " < " + (Content ?? "*"));
             }
 
-            public override bool Equals(object obj)
+            public bool EqualTo(object obj)
             {
                 if (!(obj is DirectoryEntry))
                     return false;
@@ -97,10 +97,10 @@ namespace HelixSync.Test
                    .Select(c => new DirectoryEntry(c))
                    .ToList();
 
-                fillWithMissingDirectories(directoryEntries);
+                FillWithMissingDirectories(directoryEntries);
                 if (!HelixUtil.FileSystemCaseSensitive)
-                    fixCasing(directoryEntries);
-                removeDuplicateEntries(directoryEntries);
+                    FixCasing(directoryEntries);
+                RemoveDuplicateEntries(directoryEntries);
                 directoryEntries.Sort();
                 this.m_List = directoryEntries;
             }
@@ -110,12 +110,12 @@ namespace HelixSync.Test
             public DirectoryEntryCollection(params DirectoryEntry[] entries)
             {
                 List<DirectoryEntry> directoryEntries = new List<DirectoryEntry>(entries);
-                fillWithMissingDirectories(directoryEntries);
+                FillWithMissingDirectories(directoryEntries);
                 directoryEntries.Sort();
                 this.m_List = directoryEntries;
             }
 
-            private static void fillWithMissingDirectories(List<DirectoryEntry> directoryEntries)
+            private static void FillWithMissingDirectories(List<DirectoryEntry> directoryEntries)
             {
                 //adds in missing directories
                 foreach (DirectoryEntry entry in directoryEntries.ToList())
@@ -138,7 +138,7 @@ namespace HelixSync.Test
                 }
             }
 
-            private void fixCasing(List<DirectoryEntry> directoryEntries)
+            private void FixCasing(List<DirectoryEntry> directoryEntries)
             {
                 List<DirectoryEntry> clonedList = new List<DirectoryEntry>(directoryEntries);
 
@@ -158,7 +158,7 @@ namespace HelixSync.Test
                 }          
             }
 
-            private static void removeDuplicateEntries(List<DirectoryEntry> directoryEntries)
+            private static void RemoveDuplicateEntries(List<DirectoryEntry> directoryEntries)
             {
                 List<DirectoryEntry> clonedList = new List<DirectoryEntry>(directoryEntries);
 
@@ -178,8 +178,7 @@ namespace HelixSync.Test
             {
                 return string.Join(Environment.NewLine, (object[])m_List.ToArray());
             }
-            [Obsolete]
-            public override bool Equals(object obj)
+            public bool EqualTo(object obj)
             {
                 if (!(obj is DirectoryEntryCollection))
                     return false;
@@ -370,7 +369,7 @@ namespace HelixSync.Test
             DirectoryEntryCollection entryCollection = new DirectoryEntryCollection(content);
             DirectoryEntryCollection contents = GetContent();
 
-            return entryCollection.Equals(contents);
+            return entryCollection.EqualTo(contents);
         }
 
         public void Dispose()
