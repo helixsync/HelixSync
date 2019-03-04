@@ -11,6 +11,7 @@ namespace HelixSync.FileSystem
         {
             if (string.IsNullOrEmpty(fullPath))
                 throw new ArgumentNullException(nameof(fullPath));
+
             fullPath = HelixUtil.PathUniversal(fullPath);
 
             if (!Path.IsPathRooted(fullPath))
@@ -137,6 +138,17 @@ namespace HelixSync.FileSystem
         public override string ToString()
         {
             return RelativePath;
+        }
+
+        internal FileEntry ToFileEntry()
+        {
+            return new FileEntry()
+            {
+                EntryType = this is FSDirectory ? FileEntryType.Directory :  FileEntryType.File,
+                FileName = this.Root.PathRelative(this.Name),
+                LastWriteTimeUtc = this.LastWriteTimeUtc,
+                Length = this.Length,
+            };
         }
     }
 }

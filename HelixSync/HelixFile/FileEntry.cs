@@ -93,8 +93,6 @@ namespace HelixSync
             return fileInfo;
         }
 
-
-
         public override string ToString()
         {
             if (EntryType == FileEntryType.Directory)

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using HelixSync.FileSystem;
 using HelixSync.HelixDirectory;
 
 namespace HelixSync
@@ -84,24 +85,14 @@ namespace HelixSync
                     }
 
                     consoleEx.WriteLine();
-                    //if (options.WhatIf)
-                    //{
-                    //    consoleEx.WriteLine("** WhatIf Mode - No Changes Made **");
-                    //    consoleEx.WriteLine("Initialized Encrypted Directory (" + DirectoryHeader.EmptyDirectoryId().Substring(0, 6) + "...)");
-                    //    decrDirectory.EncrDirectoryId = DirectoryHeader.EmptyDirectoryId();
-                    //    consoleEx.WriteLine("Initialized Decrypted Directory");
-                    //}
-                    //else
-                    //{
-                        encrDirectory.Initialize(derivedBytesProvider, fileVersion);
-                        encrDirectory.Open(derivedBytesProvider);
-                        consoleEx.WriteLine("Initialized Encrypted Directory (" + encrDirectory.Header.DirectoryId.Substring(0, 6) + "...)");
-                        decrDirectory.EncrDirectoryId = encrDirectory.Header.DirectoryId;
-                        decrDirectory.Initialize();
-                        consoleEx.WriteLine("Initialized Decrypted Directory");
-                        decrDirectory.Open();
-                    //}
 
+                    encrDirectory.Initialize(derivedBytesProvider, fileVersion);
+                    encrDirectory.Open(derivedBytesProvider);
+                    consoleEx.WriteLine("Initialized Encrypted Directory (" + encrDirectory.Header.DirectoryId.Substring(0, 6) + "...)");
+                    decrDirectory.EncrDirectoryId = encrDirectory.Header.DirectoryId;
+                    decrDirectory.Initialize();
+                    consoleEx.WriteLine("Initialized Decrypted Directory");
+                    decrDirectory.Open();
                 }
                 else
                 {
@@ -247,13 +238,13 @@ namespace HelixSync
                         }
 
 
-                        if (!options.WhatIf)
-                        {
+                        //if (!options.WhatIf)
+                        //{
                             var syncResult = pair.TrySync(change, consoleEx);
                             //todo: add to error log
                             if (syncResult.Exception != null)
                                 consoleEx.WriteErrorLine("..." + syncResult.Exception.Message);
-                        }
+                        //}
                     }
 
                     //todo: show totals
@@ -265,6 +256,28 @@ namespace HelixSync
 
                     //todo: fix unchanged
                     Console.WriteLine($"Other      |     --- |     --- |     --- | {conflict,7:#,0} |");
+
+
+                    consoleEx.WriteLine(VerbosityLevel.Diagnostic, 0, "");
+                    consoleEx.WriteLine(VerbosityLevel.Diagnostic, 0, "==Decr Directory==");
+                    foreach(var entry in decrDirectory.FSDirectory.GetEntries(SearchOption.AllDirectories))
+                    {
+                        if (entry is FSDirectory dirEntry)
+                            consoleEx.WriteLine(VerbosityLevel.Diagnostic, 1, $"<dir> {entry.RelativePath}");
+                        else if (entry is FSFile fileEntry)
+                            consoleEx.WriteLine(VerbosityLevel.Diagnostic, 1, $"{HelixUtil.FormatBytes5(entry.Length)} {entry.RelativePath}");
+                    }
+
+                    consoleEx.WriteLine(VerbosityLevel.Diagnostic, 0, "");
+                    consoleEx.WriteLine(VerbosityLevel.Diagnostic, 0, "==Encr Directory==");
+                    foreach (var entry in encrDirectory.FSDirectory.GetEntries(SearchOption.AllDirectories))
+                    {
+                        if (entry is FSDirectory dirEntry)
+                            consoleEx.WriteLine(VerbosityLevel.Diagnostic, 1, $"<dir> {entry.RelativePath}");
+                        else if (entry is FSFile fileEntry)
+                            consoleEx.WriteLine(VerbosityLevel.Diagnostic, 1, $"{HelixUtil.FormatBytes5(entry.Length)} {entry.RelativePath}");
+                    }
+
                     return 0;
                 }
             }

@@ -130,12 +130,13 @@ namespace HelixSync.FileSystem
                     .TryGetEntry(string.Join(HelixUtil.UniversalDirectorySeparatorChar.ToString(), split.Skip(1).ToArray()));
         }
 
-        internal void WhatIfAddFile(string relativeName, int fileSize)
+        internal void WhatIfAddFile(string relativeName, long fileSize)
         {
             if (!WhatIf)
                 throw new InvalidOperationException("FSDirectory not in WhatIf mode");
 
             FSFile entry = new FSFile(PathFull(relativeName), GetDirectory(PathDirectory(relativeName)), this.WhatIf);
+            //entry.Length = fileSize;
             entry.Parent.children.Add(entry);
         }
 

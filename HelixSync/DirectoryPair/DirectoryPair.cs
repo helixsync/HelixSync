@@ -600,8 +600,8 @@ namespace HelixSync
             //todo: ensure the entry direction and operation end up being the same
             //todo: ensure all the calling methods do something with the results
 
-            if (WhatIf)
-                throw new InvalidOperationException("Unable to perform sync when WhatIf mode is set to true");
+            //if (WhatIf)
+            //    throw new InvalidOperationException("Unable to perform sync when WhatIf mode is set to true");
             if (entry == null)
                 throw new ArgumentNullException(nameof(entry));
 
@@ -620,16 +620,24 @@ namespace HelixSync
                 options.FileVersion = EncrDirectory.Header.FileVersion;
                 options.Log = (s) => console?.WriteLine(VerbosityLevel.Diagnostic, 1, s);
 
-                HelixFile.Encrypt(decrPath, encrPath, EncrDirectory.DerivedBytesProvider, options);
-
-                //forces a change if the file was modified to quickly
-                if (logEntry != null && (File.GetLastWriteTimeUtc(encrPath) - logEntry.EncrModified).TotalMilliseconds < encrTimespanPrecisionMS)
+                if (WhatIf)
                 {
-                    File.SetLastWriteTimeUtc(encrPath, logEntry.EncrModified + TimeSpan.FromMilliseconds(encrTimespanPrecisionMS));
+                    EncrDirectory.FSDirectory.WhatIfAddFile(encrPath, entry.DisplayFileLength);
+                    header = entry.DecrInfo.ToFileEntry();
                 }
+                else
+                {
+                    HelixFile.Encrypt(decrPath, encrPath, EncrDirectory.DerivedBytesProvider, options);
 
-                EncrDirectory.FSDirectory.RefreshEntry(encrPath);
 
+                    //forces a change if the file was modified to quickly
+                    if (logEntry != null && (File.GetLastWriteTimeUtc(encrPath) - logEntry.EncrModified).TotalMilliseconds < encrTimespanPrecisionMS)
+                    {
+                        File.SetLastWriteTimeUtc(encrPath, logEntry.EncrModified + TimeSpan.FromMilliseconds(encrTimespanPrecisionMS));
+                    }
+
+                    EncrDirectory.FSDirectory.RefreshEntry(encrPath);
+                }
                 var newLogEntry = CreateEntryFromHeader(header, EncrDirectory.GetFileEntry(entry.EncrFileName));
                 SyncLog.Add(newLogEntry);
 
@@ -667,11 +675,20 @@ namespace HelixSync
                         //todo: throw more specific exception
                         return SyncResults.Failure(new HelixException($"Case only conflict file \"{decrPath}\" exists as \"{exactPath}\"."));
                     }
-                    HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
-                    //todo: get the date on the file system (needed if the filesystem has less precision 
+
+                    if (WhatIf)
+                    {
+                        throw new NotImplementedException(); //todo: implment
+                    }
+                    else
+                    {
+                        HelixFile.Decrypt(encrPath, decrPath, EncrDirectory.DerivedBytesProvider);
+                        //todo: get the date on the file system (needed if the filesystem has less precision 
+                        DecrDirectory.FSDirectory.RefreshEntry(decrPath);
+                    }
 
                     SyncLog.Add(fileSystemEntry);
-                    DecrDirectory.FSDirectory.RefreshEntry(decrPath);
+
                     return SyncResults.Success();
                 }
             }
