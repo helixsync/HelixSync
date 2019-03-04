@@ -17,22 +17,21 @@ namespace HelixSync
             consoleEx = consoleEx ?? new ConsoleEx();
             consoleEx.Verbosity = options.Verbosity;
 
-            consoleEx.WriteLine("------------------------");
-            consoleEx.WriteLine("-- HelixSync " + typeof(SyncCommand).GetTypeInfo().Assembly.GetName().Version.ToString());
-            consoleEx.WriteLine("------------------------");
-            consoleEx.WriteLine();
-
             consoleEx.WriteLine("Sync");
-            consoleEx.WriteLine($"..DecrDir: {options.DecrDirectory}");
-            consoleEx.WriteLine($"..EncrDir: {options.EncrDirectory}");
             if (options.WhatIf)
                 consoleEx.WriteLine("..Options: WhatIf");
+            consoleEx.WriteLine($"..DecrDir: {options.DecrDirectory}");
+            consoleEx.WriteLine($"..EncrDir: {options.EncrDirectory}");
+            consoleEx.WriteLine($"..Direction: {options.Direction}");
             consoleEx.WriteLine($"..Verbosity: {options.Verbosity}");
 
             consoleEx.WriteLine();
 
             if (options.WhatIf)
+            {
                 consoleEx.WriteLine("** WhatIf Mode - No Changes Made **");
+                consoleEx.WriteLine("");
+            }
 
 
             using (HelixEncrDirectory encrDirectory = new HelixEncrDirectory(options.EncrDirectory, whatIf: options.WhatIf))

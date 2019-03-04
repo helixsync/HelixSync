@@ -40,9 +40,9 @@ namespace HelixSync
         public VerbosityLevel Verbosity {get; set;}
 
         //todo: implement Direction
-        //[Argument(Recommended = true)]
-        //[Description("Bidirectionaly syncs two ways, otherwise forces a one way sync")]
-        //public SyncDirection Direction { get; set; } = SyncDirection.Bidirectional;
+        [Argument(Recommended = true)]
+        [Description("Bidirectionaly syncs two ways, otherwise forces a one way sync")]
+        public SyncDirection Direction { get; set; } = SyncDirection.Bidirectional;
 
         public override string ToString()
         {

@@ -34,6 +34,7 @@ namespace HelixSync
         static int Main(string[] args)
         {
             //                 -----------------------------------------------------------------------------80
+            Console.WriteLine("");
             Console.WriteLine("{0} v{1}         ::  {2}", 
                 GetTitle(), 
                 GetVersion(),
