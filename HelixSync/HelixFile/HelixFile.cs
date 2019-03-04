@@ -100,8 +100,7 @@ namespace HelixSync
 
                 options?.AfterMetadataRead?.Invoke(header, options);
 
-                HeaderCorruptionException ex;
-                if (!header.IsValid(out ex))
+                if (!header.IsValid(out HeaderCorruptionException ex))
                     throw ex;
 
                 string decrFullFileName = decrPath;
@@ -194,8 +193,7 @@ namespace HelixSync
 
                     FileEntry header = decryptor.ReadHeader();
 
-                    HeaderCorruptionException ex;
-                    if (!header.IsValid(out ex))
+                    if (!header.IsValid(out HeaderCorruptionException ex))
                         throw ex;
 
                     return header;

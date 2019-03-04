@@ -29,8 +29,10 @@ namespace HelixSync
 
         public static SyncLog GetLog(string path, bool whatIf)
         {
-            SyncLog syncLog = new SyncLog(path);
-            syncLog.WhatIf = whatIf;
+            SyncLog syncLog = new SyncLog(path)
+            {
+                WhatIf = whatIf
+            };
             syncLog.Reload();
             return syncLog;
         }

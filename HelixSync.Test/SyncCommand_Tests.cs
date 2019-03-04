@@ -34,12 +34,14 @@ namespace HelixSync.Test
                 Password = "secret",
                 Initialize = true
             };
-            ConsoleEx console = new ConsoleEx();
-            console.BeforeWriteLine = (o) =>
+            ConsoleEx console = new ConsoleEx
             {
-                if (o is PreSyncDetails preSync)
-                    onPreSyncDetails?.Invoke(preSync);
-                System.Diagnostics.Debug.WriteLine(o);
+                BeforeWriteLine = (o) =>
+                {
+                    if (o is PreSyncDetails preSync)
+                        onPreSyncDetails?.Invoke(preSync);
+                    System.Diagnostics.Debug.WriteLine(o);
+                }
             };
             SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
         }
@@ -53,13 +55,14 @@ namespace HelixSync.Test
                 Password = "secret",
                 Initialize = true
             };
-            ConsoleEx console = new ConsoleEx();
-            console.BeforeWriteLine = (o) =>
+            ConsoleEx console = new ConsoleEx
             {
-                PreSyncDetails preSync = o as PreSyncDetails;
-                if (preSync != null)
-                    onPreSyncDetails?.Invoke(preSync);
-                System.Diagnostics.Debug.WriteLine(o);
+                BeforeWriteLine = (o) =>
+                {
+                    if (o is PreSyncDetails preSync)
+                        onPreSyncDetails?.Invoke(preSync);
+                    System.Diagnostics.Debug.WriteLine(o);
+                }
             };
 
             SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
@@ -69,7 +72,7 @@ namespace HelixSync.Test
         {
             using(var pair = DirectoryPair.Open(Encr1.DirectoryPath, Decr1.DirectoryPath,  DerivedBytesProvider.FromPassword("secret"), true, HelixFileVersion.UnitTest)) 
             {
-                return pair.DecrDirectory.SyncLog.ToArray();
+                return pair.SyncLog.ToArray();
             }
         }
 
@@ -130,7 +133,7 @@ namespace HelixSync.Test
             //Assert.IsTrue(false, "Sometimes works sometimes fails depending if th delete comes before the add");
         }
 
-        static string[] choices = new string[]
+        static readonly string[] choices = new string[]
         {
             "a",
             "a:2",

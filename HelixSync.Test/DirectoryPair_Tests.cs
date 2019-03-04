@@ -159,7 +159,7 @@ namespace HelixSync.Test
                 Assert.AreEqual("test.txt", changes[0].DecrFileName);
 
                 Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]).SyncStatus);
-                Assert.IsTrue(origToEncr.DecrDirectory.SyncLog.FindByDecrFileName("test.txt").EntryType == FileEntryType.Removed);
+                Assert.IsTrue(origToEncr.SyncLog.FindByDecrFileName("test.txt").EntryType == FileEntryType.Removed);
                 Assert.AreEqual(0, origToEncr.FindChanges().Count);
 
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using HelixSync.FileSystem;
 using HelixSync.HelixDirectory;
 
 namespace HelixSync.Commands
@@ -29,11 +30,16 @@ namespace HelixSync.Commands
                 consoleEx.WriteLine("** WhatIf Mode - No Changes Made **");
 
 
-            using (HelixEncrDirectory encrDirectory = options.EncrDirectory != null ? new HelixEncrDirectory(options.EncrDirectory, options.WhatIf) : null)
-            using (HelixDecrDirectory decrDirectory = options.DecrDirectory !=null ? new HelixDecrDirectory(options.DecrDirectory, whatIf: options.WhatIf) : null)
+            if (options.EncrDirectory != null)
             {
-                encrDirectory?.Cleanup(consoleEx);
-                decrDirectory?.Cleanup(consoleEx);
+                FSDirectory encrDirectory = new FSDirectory(options.EncrDirectory, options.WhatIf);
+                encrDirectory.Cleanup(consoleEx);
+            }
+
+            if (options.DecrDirectory != null)
+            {
+                FSDirectory encrDirectory = new FSDirectory(options.EncrDirectory, options.WhatIf);
+                encrDirectory.Cleanup(consoleEx);
             }
 
             return 0;

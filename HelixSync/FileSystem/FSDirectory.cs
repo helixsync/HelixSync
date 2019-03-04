@@ -11,6 +11,13 @@ namespace HelixSync.FileSystem
     ///<summary>
     public class FSDirectory : FSEntry, IFSDirectoryCore
     {
+        public FSDirectory(string path, bool whatIf)
+            : base(path, null, whatIf)
+        {
+            this.IsRoot = true;
+            this.PopulateFromInfo(new DirectoryInfo(path));
+        }
+
         public FSDirectory(string path, bool whatIf, bool isRoot)
             : this(new DirectoryInfo(path), null, whatIf, isRoot)
         {
@@ -134,6 +141,9 @@ namespace HelixSync.FileSystem
         {
             if (!WhatIf)
                 throw new InvalidOperationException("FSDirectory not in WhatIf mode");
+
+            if (!Exists)
+                throw new DirectoryNotFoundException();
 
             FSFile entry = new FSFile(PathFull(relativeName), GetDirectory(PathDirectory(relativeName)), this.WhatIf);
             //entry.Length = fileSize;
@@ -270,8 +280,7 @@ namespace HelixSync.FileSystem
                 newEntry = null; //not found
             }
 
-            FSEntry oldEntry;
-            children.TryGetValue(split[0], out oldEntry);
+            children.TryGetValue(split[0], out FSEntry oldEntry);
             if (newEntry?.EntryType != oldEntry?.EntryType)
             {
                 if (oldEntry != null)
