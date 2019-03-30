@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using HelixSync.FileSystem;
@@ -32,13 +33,13 @@ namespace HelixSync.Commands
 
             if (options.EncrDirectory != null)
             {
-                FSDirectory encrDirectory = new FSDirectory(options.EncrDirectory, options.WhatIf);
+                FSDirectory encrDirectory = new FSDirectory(new DirectoryInfo(options.EncrDirectory).FullName, options.WhatIf);
                 encrDirectory.Cleanup(consoleEx);
             }
 
             if (options.DecrDirectory != null)
             {
-                FSDirectory encrDirectory = new FSDirectory(options.EncrDirectory, options.WhatIf);
+                FSDirectory encrDirectory = new FSDirectory(new DirectoryInfo(options.DecrDirectory).FullName, options.WhatIf);
                 encrDirectory.Cleanup(consoleEx);
             }
 

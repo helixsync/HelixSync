@@ -70,8 +70,10 @@ namespace HelixSync.Test
 
         public SyncLogEntry[] Decr1AndEncr1SyncLog() 
         {
-            using(var pair = DirectoryPair.Open(Encr1.DirectoryPath, Decr1.DirectoryPath,  DerivedBytesProvider.FromPassword("secret"), true, HelixFileVersion.UnitTest)) 
+            using(var pair = new DirectoryPair(Decr1.DirectoryPath, Encr1.DirectoryPath,  DerivedBytesProvider.FromPassword("secret"), true)) 
             {
+                pair.OpenEncr(null);
+                pair.OpenDecr(null);
                 return pair.SyncLog.ToArray();
             }
         }

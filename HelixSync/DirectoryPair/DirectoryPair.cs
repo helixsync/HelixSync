@@ -93,9 +93,9 @@ namespace HelixSync
         {
             if (Header == null)
             {
-                consoleEx.WriteLine(VerbosityLevel.Detailed, 0, "Opening Encrypted Directory...");
+                consoleEx?.WriteLine(VerbosityLevel.Detailed, 0, "Opening Encrypted Directory...");
                 Header = DirectoryHeader.Load(EncrDirectory.PathFull(HelixConsts.HeaderFileName), DerivedBytesProvider);
-                consoleEx.WriteLine(VerbosityLevel.Detailed, 0, "Opened Encrypted Directory (" + Header.DirectoryId.Substring(0, 6) + "...)");
+                consoleEx?.WriteLine(VerbosityLevel.Detailed, 0, "Opened Encrypted Directory (" + Header.DirectoryId.Substring(0, 6) + "...)");
             }
             this.FileNameEncoder = new FileNameEncoder(Header.FileNameKey);
         }
@@ -110,7 +110,8 @@ namespace HelixSync
 
         public void InitializeDecr(ConsoleEx consoleEx)
         {
-            consoleEx.WriteLine(VerbosityLevel.Detailed, 0, "Initializing Decrypted Directory...");
+            consoleEx?.WriteLine(VerbosityLevel.Detailed, 0, "Initializing Decrypted Directory...");
+
             //Initialize Decr Directory
             DecrDirectory.Create();
             DecrDirectory.CreateDirectory(HelixConsts.SyncLogDirectory);
@@ -125,7 +126,8 @@ namespace HelixSync
                     stream.WriteLine(HelixConsts.SyncLogHeader);
                 }
             }
-            consoleEx.WriteLine(VerbosityLevel.Detailed, 1, "Decrypted Directory Initialized");
+
+            consoleEx?.WriteLine(VerbosityLevel.Detailed, 1, "Decrypted Directory Initialized");
         }
 
         public void OpenDecr(ConsoleEx consoleEx)
