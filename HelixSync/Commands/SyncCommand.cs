@@ -131,6 +131,8 @@ namespace HelixSync
 
                 int conflict = 0;
 
+                var defaultConflictAction = "";
+
                 consoleEx.WriteLine(VerbosityLevel.Normal, 0, "Performing Sync...");
                 foreach (PreSyncDetails change in changes)
                 {
@@ -146,11 +148,23 @@ namespace HelixSync
                         var encrModified = change.EncrInfo == null ? (object)null : change.EncrInfo.LastWriteTimeUtc.ToLocalTime();
                         var encrSize = change.EncrHeader == null ? (object)null : HelixUtil.FormatBytes5(change.EncrHeader.Length);
 
-                        consoleEx.WriteLine($"    Decrypted - Modified: {decrModified}, Size: {decrSize}");
-                        consoleEx.WriteLine($"    Encrypted - Modified: {encrModified}, Size: {encrSize}");
-                        consoleEx.WriteLine($"");
-                        consoleEx.WriteLine($"    D - Decrypted, E - Encrypted, S - Skip"); //todo: support newer, support always
-                        var response = consoleEx.PromptChoice("    Select Option [D,E,S]? ", new string[] { "D", "E", "S" }, "S");
+
+                        string response;
+                        if (defaultConflictAction != "")
+                            response = defaultConflictAction;
+                        else
+                        {
+                            consoleEx.WriteLine($"    Decrypted - Modified: {decrModified}, Size: {decrSize}");
+                            consoleEx.WriteLine($"    Encrypted - Modified: {encrModified}, Size: {encrSize}");
+                            consoleEx.WriteLine($"");
+                            consoleEx.WriteLine($"    D - Decrypted, E - Encrypted, S - Skip, + - Always perform this action"); //todo: support newer, support always
+                            response = consoleEx.PromptChoice("    Select Option [D,E,S,D+,E+,S+]? ", new string[] { "D", "E", "S", "D+", "E+", "S+" }, "S");
+                            if (response.EndsWith("+"))
+                            {
+                                response = response.Substring(0, 1);
+                                defaultConflictAction = response;
+                            }
+                        }
                         if (response == "D")
                             change.SyncMode = PreSyncMode.DecryptedSide;
                         else if (response == "E")
@@ -162,6 +176,7 @@ namespace HelixSync
 
                     if (change.SyncMode == PreSyncMode.EncryptedSide)
                     {
+                        //todo: make display operation be the actual operation
                         if (change.DisplayOperation == PreSyncOperation.Add)
                             encrAdd++;
                         else if (change.DisplayOperation == PreSyncOperation.Remove)

@@ -663,8 +663,19 @@ namespace HelixSync
 
                 if (WhatIf)
                 {
-                    EncrDirectory.WhatIfAddFile(encrPath, entry.DisplayFileLength);
-                    header = entry.DecrInfo.ToFileEntry();
+                    EncrDirectory.WhatIfReplaceFile(encrPath, entry.DisplayFileLength);
+                    if (entry.DecrInfo == null)
+                    {
+                        header = new FileEntry()
+                        {
+                            EntryType = FileEntryType.Removed,
+                            FileName = entry.DecrFileName,
+                        };
+                    }
+                    else
+                    {
+                        header = entry.DecrInfo.ToFileEntry();
+                    }
                 }
                 else
                 {
@@ -719,7 +730,14 @@ namespace HelixSync
 
                     if (WhatIf)
                     {
-                        throw new NotImplementedException(); //todo: implment
+                        if (entry.EncrHeader.EntryType == FileEntryType.File)
+                            DecrDirectory.WhatIfReplaceFile(decrPath, entry.EncrHeader.Length, entry.EncrHeader.LastWriteTimeUtc);
+                        else if (entry.EncrHeader.EntryType == FileEntryType.Removed)
+                            DecrDirectory.WhatIfDeleteFile(decrPath);
+                        else if (entry.EncrHeader.EntryType == FileEntryType.Directory)
+                            DecrDirectory.WhatIfAddDirectory(decrPath);
+                        else
+                            throw new NotSupportedException();
                     }
                     else
                     {

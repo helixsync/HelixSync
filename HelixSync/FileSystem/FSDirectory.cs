@@ -150,13 +150,39 @@ namespace HelixSync.FileSystem
             entry.Parent.children.Add(entry);
         }
 
+        internal void WhatIfDeleteFile(string relativeName)
+        {
+            if (!WhatIf)
+                throw new InvalidOperationException("FSDirectory not in WhatIf mode");
+
+            if (!Exists)
+                throw new DirectoryNotFoundException();
+
+            (this.TryGetEntry(relativeName) as FSFile)?.Delete();
+        }
+
+        internal void WhatIfReplaceFile(string relativeName, long fileSize, DateTime lastWriteTimeUtc = default(DateTime))
+        {
+            if (!WhatIf)
+                throw new InvalidOperationException("FSDirectory not in WhatIf mode");
+
+            if (!Exists)
+                throw new DirectoryNotFoundException();
+
+            (this.TryGetEntry(relativeName) as FSFile)?.Delete();
+            FSFile entry = new FSFile(PathFull(relativeName), GetDirectory(PathDirectory(relativeName)), this.WhatIf) { LastWriteTimeUtc = lastWriteTimeUtc };
+            //entry.Length = fileSize;
+            entry.Parent.children.Add(entry);
+        }
+
+
         public FSDirectory GetDirectory(string path)
         {
             var entry = this.TryGetEntry(path);
             if (entry is FSDirectory entryDirectory)
                 return entryDirectory;
             else
-                throw new DirectoryNotFoundException();
+                throw new DirectoryNotFoundException($"Directory {path} not fourd");
         }
 
         internal void WhatIfAddDirectory(string relativeName)
