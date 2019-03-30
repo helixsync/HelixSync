@@ -22,38 +22,25 @@ namespace HelixSync
                 this.propertyInfo = propertyInfo;
             }
 
-            public int OrdinalPosition
+            public int? OrdinalPosition
             {
                 get
                 {
-                    var position = propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.OrdinalPosition ?? int.MaxValue;
-                    if (position < 0) position = int.MaxValue;
-                    return position;
-                }
-            }
-            public bool IsOrdinal => OrdinalPosition != int.MaxValue;
-
-
-            public string Name
-            {
-                get
-                {
-                    return propertyInfo.Name;
+                    var unaltered = propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.OrdinalPosition;
+                    if (unaltered < 0)
+                        return null;
+                    return unaltered;
                 }
             }
 
+            public bool IsOrdinal => OrdinalPosition != null;
+            public string Name => propertyInfo.Name;
             public bool Required => propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.Required == true;
-
-            public bool Recommended => Required || OrdinalPosition != int.MaxValue || propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.Recommended == true;
-
+            public bool Recommended => Required || IsOrdinal || propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.Recommended == true;
             public bool PreferShortName => propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.PreferShortName == true;
-
             public string ShortName => propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.ShortName;
-
             public bool IsBool => propertyInfo.PropertyType == typeof(Boolean);
-
             public string ValuePlaceholder => propertyInfo.GetCustomAttribute<ArgumentAttribute>()?.ValuePlaceholder ?? "value";
-
 
             public string UsageString(bool? shortName = null, bool dualPattern = false)
             {
@@ -98,7 +85,7 @@ namespace HelixSync
 
             public override string ToString()
             {
-                if (OrdinalPosition > 0 && OrdinalPosition != int.MaxValue)
+                if (OrdinalPosition != null)
                     return $"[{Name}] \"{ValuePlaceholder}";
                 else
                     return $"{Name} \"{ValuePlaceholder}";
@@ -130,7 +117,7 @@ namespace HelixSync
         public static string UsageLine(Type type, string begining)
         {
             var args = type.GetProperties().Select(p => new ArgumentMetadata(p))
-                .OrderBy(p => p.OrdinalPosition)
+                .OrderBy(p => p.OrdinalPosition ?? int.MaxValue)
                 .ThenBy(p => p.Required)
                 .ThenBy(p => p.Recommended)
                 .ThenBy(p => p.Name)
@@ -185,7 +172,7 @@ namespace HelixSync
         public static string UsageOptions(Type type, bool advanced)
         {
             var args = type.GetProperties().Select(p => new ArgumentMetadata(p))
-                .OrderBy(p => p.OrdinalPosition)
+                .OrderBy(p => p.OrdinalPosition ?? int.MaxValue)
                 .ThenBy(p => p.Required)
                 .ThenBy(p => p.Recommended)
                 .ThenBy(p => p.Name)
@@ -302,8 +289,7 @@ namespace HelixSync
                             propertyInfo.SetValue(optionsObj, true);
                         else
                         {
-                            bool valueOut;
-                            if (!bool.TryParse(argOpt, out valueOut))
+                            if (!bool.TryParse(argOpt, out bool valueOut))
                                 throw new ArgumentParseException("Invalid Argument Option (" + argOpt + " expecting -" + argName + ":true or -" + argName + ":false");
                             propertyInfo.SetValue(optionsObj, valueOut);
                         }
@@ -330,8 +316,7 @@ namespace HelixSync
 
                         i++;
                         string val = args[i];
-                        object parsedValue;
-                        if (!Enum.TryParse(propertyInfo.PropertyType, val, out parsedValue))
+                        if (!Enum.TryParse(propertyInfo.PropertyType, val, out object parsedValue))
                         {
                             throw new ArgumentParseException($"Invalid selection for argument {arg}, should be one of the following values: {string.Join(",", Enum.GetNames(propertyInfo.PropertyType))}");
                         }

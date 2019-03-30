@@ -4,7 +4,7 @@ namespace HelixSync
 {
     public class ArgumentAttribute : Attribute
     {
-        public int OrdinalPosition { get; set; } = int.MaxValue;
+        public int OrdinalPosition { get; set; } = -1;
         public string ShortName { get; set; }
         public bool Required { get; set; }
 
