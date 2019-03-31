@@ -10,7 +10,7 @@ using HelixSync.HelixDirectory;
 
 namespace HelixSync
 {
-    public class DirectoryPair : IDisposable
+    public partial class DirectoryPair : IDisposable
     {
         public FSDirectory DecrDirectory { get; }
         public FSDirectory EncrDirectory { get; }
@@ -150,224 +150,10 @@ namespace HelixSync
         }
 
 
-        /// <summary>
-        /// Returns a list of changes that need to be performed as part of the sync.
-        /// </summary>
-        public List<PreSyncDetails> FindChanges(bool reset = true, ConsoleEx console = null)
-        {//todo: disable default for reset
-            console?.WriteLine(VerbosityLevel.Diagnostic, 0, "Finding Changes...");
-            if (reset)
-                Reset();
-
-            var rng = RandomNumberGenerator.Create();
-
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Enumerating Encr Directory...");
-            List<FSEntry> encrDirectoryFiles = EncrDirectory.GetEntries(SearchOption.AllDirectories).Where(EncrFilter).ToList();
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"{encrDirectoryFiles.Count} files found");
-            var time1 = stopwatch.ElapsedMilliseconds;
-
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, $"Enumerating Decr Directory...");
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"Path: {DecrDirectory.FullName}");
-            List<FSEntry> decrDirectoryFiles = DecrDirectory.GetEntries(SearchOption.AllDirectories).Where(DecrFilter).ToList();
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"{decrDirectoryFiles.Count} files found");
-            var time2 = stopwatch.ElapsedMilliseconds;
-
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Reading sync log (decr side)...");
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"{SyncLog.Count()} entries found");
-            //todo: filter out log entries where the decr file name and the encr file name does not match
-            var time3 = stopwatch.ElapsedMilliseconds;
-
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Performing 3 way join...");
-            List<PreSyncBuilder> matchesA = ThreeWayJoin(encrDirectoryFiles, decrDirectoryFiles, SyncLog, console).ToList();
-            var time4 = stopwatch.ElapsedMilliseconds;
-
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Refreshing EncrHeaders...");
-            int statsRefreshHeaderCount = 0;
-            foreach (PreSyncBuilder match in matchesA.Where(m => m.EncrInfo != null && m.EncrInfo.LastWriteTimeUtc != m.LogEntry?.EncrModified))
-            {
-                RefreshPreSyncEncrHeader(match);
-                statsRefreshHeaderCount++;
-            }
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, $"Updated {statsRefreshHeaderCount} headers");
-            var time5 = stopwatch.ElapsedMilliseconds;
-
-            //console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Removing unchanged entries...");
-            //var matchesB = matchesA.Where(m => m.DecrChange || m.EncrChanged).Select(m => m.ToPreSyncB()).ToList();
-
-            //todo: reorder based on dependencies
-            //todo: detect conflicts
-
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Adding Relationships...");
-            AddRelationships(matchesA);
-            var time6 = stopwatch.ElapsedMilliseconds;
-
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Sorting...");
-            matchesA = Sort(rng, matchesA);
-            var time7 = stopwatch.ElapsedMilliseconds;
 
 
-            return matchesA.Select(m => m.ToSyncEntry()).ToList();
-            //return Sort(matchesB);
-
-        }
-
-        private static List<PreSyncBuilder> Sort(RandomNumberGenerator rng, List<PreSyncBuilder> matchesA)
-        {
-            List<PreSyncBuilder> NoDependents = new List<PreSyncBuilder>();
-            Dictionary<PreSyncBuilder, List<PreSyncBuilder>> DependencyLookup = new Dictionary<PreSyncBuilder, List<PreSyncBuilder>>();
-            Dictionary<PreSyncBuilder, List<PreSyncBuilder>> ReverseDependencyLookup = new Dictionary<PreSyncBuilder, List<PreSyncBuilder>>();
-            foreach (var match in matchesA)
-            {
-                var dependencies = match.GetDependencies();
-                if (dependencies.Count == 0)
-                {
-                    NoDependents.Add(match);
-                }
-                else
-                {
-                    DependencyLookup.Add(match, dependencies.ToList());
-                    foreach (var dependency in dependencies)
-                    {
-                        if (!ReverseDependencyLookup.TryAdd(dependency, new List<PreSyncBuilder>() { match }))
-                            ReverseDependencyLookup[dependency].Add(match);
-                    }
-                }
-            }
-
-            List<PreSyncBuilder> outputList = new List<PreSyncBuilder>();
-            while (NoDependents.Count > 0)
-            {
-
-                byte[] rno = new byte[5];
-                rng.GetBytes(rno);
-                int randomvalue = (int)(BitConverter.ToUInt32(rno, 0) % (uint)NoDependents.Count);
-
-                var next = NoDependents[randomvalue];
-                NoDependents.RemoveAt(randomvalue);
-                outputList.Add(next);
-
-                //clear dependents, adds to the NoDependents list if possible
-                if (ReverseDependencyLookup.TryGetValue(next, out var children))
-                {
-                    foreach (var child in children)
-                    {
-                        DependencyLookup[child].Remove(next);
-                        if (DependencyLookup[child].Count == 0)
-                        {
-                            DependencyLookup.Remove(child);
-                            NoDependents.Add(child);
-                        }
-                    }
-                    ReverseDependencyLookup.Remove(next);
-                }
-
-            }
-
-            if (ReverseDependencyLookup.Count > 0)
-                throw new Exception("Unexpected circular reference found when sorting presyncdetails");
-
-            return outputList;
-        }
-
-        private static void AddRelationships(List<PreSyncBuilder> matchesA)
-        {
-            var indexedByParent = matchesA.GroupBy(m => Path.GetDirectoryName(m.DecrFileName)).ToDictionary(k => k.Key, k => k.ToList());
-            var indexedByName = matchesA.GroupBy(m => m.DecrFileName).ToDictionary(k => k.Key, k => k.ToList());
-            var indexedByUpperName = matchesA.GroupBy(m => m.DecrFileName.ToUpperInvariant()).ToDictionary(k => k.Key, k => k.ToList());
-
-            foreach (var match in matchesA)
-            {
-                indexedByName.TryGetValue(Path.GetDirectoryName(match.DecrFileName), out var relationParents);
-                match.RelationParents = relationParents;
-
-                indexedByUpperName.TryGetValue(match.DecrFileName.ToUpperInvariant(), out var relationCaseDifference);
-                match.RelationCaseDifference = relationCaseDifference;
-
-                indexedByParent.TryGetValue(match.DecrFileName, out var relationChildren);
-                match.RelationChildren = relationChildren;
-            }
-        }
 
 
-        /// <summary>
-        /// Matches files from Encr, Decr and Log Entry
-        /// </summary>
-        private List<PreSyncBuilder> ThreeWayJoin(List<FSEntry> encrDirectoryFiles, List<FSEntry> decrDirectoryFiles, SyncLog syncLog, ConsoleEx console)
-        {
-            List<PreSyncBuilder> preSyncDetails = new List<PreSyncBuilder>();
-
-            //Adds Logs
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in log...");
-            preSyncDetails.AddRange(syncLog.Select(entry => new PreSyncBuilder { LogEntry = entry }));
-            console?.WriteLine(VerbosityLevel.Diagnostic, 3, $"{preSyncDetails.Count} added");
-
-            //Updates/Adds Decrypted File Information
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in decrypted information...");
-            int decrStatAdd = 0;
-            int decrStatMerge = 0;
-            var decrJoin = decrDirectoryFiles
-                .GroupJoin(preSyncDetails,
-                    o => o.RelativePath,
-                    i => i?.LogEntry?.DecrFileName,
-                    (o, i) => new Tuple<FSEntry, PreSyncBuilder>(o, i.FirstOrDefault()));
-            foreach (var entry in decrJoin.ToList())
-            {
-                if (entry.Item2 == null)
-                {
-                    //New Entry (not in log)
-                    preSyncDetails.Add(new PreSyncBuilder { DecrInfo = entry.Item1 });
-                    decrStatAdd++;
-                }
-                else
-                {
-                    //Existing Entry (update only)
-                    entry.Item2.DecrInfo = entry.Item1;
-                    if (entry.Item1 != null)
-                        decrStatMerge++;
-                }
-            }
-            console?.WriteLine(VerbosityLevel.Diagnostic, 3, $"{decrStatAdd} added, {decrStatMerge} merged");
-
-            //find encrypted file names
-            foreach (var entry in preSyncDetails)
-            {
-                entry.DecrFileName = entry.LogEntry?.DecrFileName ?? entry.DecrInfo.RelativePath;
-                entry.EncrFileName = FileNameEncoder.EncodeName(entry.DecrFileName);
-            }
-
-
-            //Updates/adds encrypted File Information
-            console?.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in encrypted information...");
-            int encrStatAdd = 0;
-            int encrStatMerge = 0;
-            var encrJoin = encrDirectoryFiles
-                .GroupJoin(preSyncDetails,
-                    o => o.RelativePath,
-                    i => i.EncrFileName,
-                    (o, i) => new Tuple<FSEntry, PreSyncBuilder>(o, i.FirstOrDefault()));
-            foreach (var entry in encrJoin.ToList())
-            {
-                if (entry.Item2 == null)
-                {
-                    //New Entry (not in log or decrypted file)
-                    preSyncDetails.Add(new PreSyncBuilder { EncrInfo = entry.Item1, EncrFileName = entry.Item1.RelativePath });
-                    encrStatAdd++;
-                }
-                else
-                {
-                    //Existing Entry
-                    entry.Item2.EncrInfo = entry.Item1;
-                    if (entry.Item1 != null)
-                        encrStatMerge++;
-                }
-            }
-            console?.WriteLine(VerbosityLevel.Diagnostic, 3, $"{encrStatAdd} added, {encrStatMerge} merged");
-
-            return preSyncDetails;
-        }
 
         [Obsolete]
         public static void RefreshPreSyncMode(PreSyncDetails preSyncDetails)
@@ -534,24 +320,6 @@ namespace HelixSync
 
         }
 
-        private void RefreshPreSyncEncrHeader(PreSyncBuilder preSyncDetails)
-        {
-            if (preSyncDetails == null)
-                throw new ArgumentNullException(nameof(preSyncDetails));
-
-            string encrFullPath = Path.Combine(EncrDirectory.FullName, HelixUtil.PathNative(preSyncDetails.EncrFileName));
-            if (File.Exists(encrFullPath))
-            {
-                preSyncDetails.EncrHeader = HelixFile.DecryptHeader(encrFullPath, this.DerivedBytesProvider);
-
-                //Updates the DecrFileName (if necessary)
-                if (string.IsNullOrEmpty(preSyncDetails.DecrFileName)
-                    && FileNameEncoder.EncodeName(preSyncDetails.EncrHeader.FileName) == preSyncDetails.EncrInfo.RelativePath)
-                {
-                    preSyncDetails.DecrFileName = preSyncDetails.EncrHeader.FileName;
-                }
-            }
-        }
         private void RefreshPreSyncEncrHeader(PreSyncDetails preSyncDetails)
         {
             if (preSyncDetails == null)
