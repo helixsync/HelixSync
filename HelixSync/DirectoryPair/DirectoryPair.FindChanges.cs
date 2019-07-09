@@ -14,7 +14,8 @@ namespace HelixSync
         /// Returns a list of changes that need to be performed as part of the sync.
         /// </summary>
         public List<PreSyncDetails> FindChanges(bool reset = true, ConsoleEx console = null)
-        {//todo: disable default for reset
+        {   
+            //todo: disable default for reset
             console?.WriteLine(VerbosityLevel.Diagnostic, 0, "Finding Changes...");
             if (reset)
                 Reset();
@@ -36,7 +37,7 @@ namespace HelixSync
 
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Performing 3 way join...");
-            List<PreSyncBuilder> changes = FindChanges_St4_ThreeWayJoin(encrDirectoryFiles, decrDirectoryFiles, SyncLog, console).ToList();
+            List<ChangeBuilder> changes = FindChanges_St4_ThreeWayJoin(encrDirectoryFiles, decrDirectoryFiles, SyncLog, console).ToList();
 
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Refreshing EncrHeaders...");
@@ -59,6 +60,8 @@ namespace HelixSync
             changes = FindChanges_St9_Sort(rng, changes);
 
 
+            FindChanges_St10_CalculateSyncMode(changes);
+
             return changes.Select(m => m.ToSyncEntry()).ToList();
         }
 
@@ -67,13 +70,13 @@ namespace HelixSync
         /// <summary>
         /// Matches files from Encr, Decr and Log Entry
         /// </summary>
-        private List<PreSyncBuilder> FindChanges_St4_ThreeWayJoin(List<FSEntry> encrDirectoryFiles, List<FSEntry> decrDirectoryFiles, SyncLog syncLog, ConsoleEx console)
+        private List<ChangeBuilder> FindChanges_St4_ThreeWayJoin(List<FSEntry> encrDirectoryFiles, List<FSEntry> decrDirectoryFiles, SyncLog syncLog, ConsoleEx console)
         {
-            List<PreSyncBuilder> preSyncDetails = new List<PreSyncBuilder>();
+            List<ChangeBuilder> preSyncDetails = new List<ChangeBuilder>();
 
             //Adds Logs
             console?.WriteLine(VerbosityLevel.Diagnostic, 2, "Merging in log...");
-            preSyncDetails.AddRange(syncLog.Select(entry => new PreSyncBuilder { LogEntry = entry }));
+            preSyncDetails.AddRange(syncLog.Select(entry => new ChangeBuilder { LogEntry = entry }));
             console?.WriteLine(VerbosityLevel.Diagnostic, 3, $"{preSyncDetails.Count} added");
 
             //Updates/Adds Decrypted File Information
@@ -84,13 +87,13 @@ namespace HelixSync
                 .GroupJoin(preSyncDetails,
                     o => o.RelativePath,
                     i => i?.LogEntry?.DecrFileName,
-                    (o, i) => new Tuple<FSEntry, PreSyncBuilder>(o, i.FirstOrDefault()));
+                    (o, i) => new Tuple<FSEntry, ChangeBuilder>(o, i.FirstOrDefault()));
             foreach (var entry in decrJoin.ToList())
             {
                 if (entry.Item2 == null)
                 {
                     //New Entry (not in log)
-                    preSyncDetails.Add(new PreSyncBuilder { DecrInfo = entry.Item1 });
+                    preSyncDetails.Add(new ChangeBuilder { DecrInfo = entry.Item1 });
                     decrStatAdd++;
                 }
                 else
@@ -119,13 +122,13 @@ namespace HelixSync
                 .GroupJoin(preSyncDetails,
                     o => o.RelativePath,
                     i => i.EncrFileName,
-                    (o, i) => new Tuple<FSEntry, PreSyncBuilder>(o, i.FirstOrDefault()));
+                    (o, i) => new Tuple<FSEntry, ChangeBuilder>(o, i.FirstOrDefault()));
             foreach (var entry in encrJoin.ToList())
             {
                 if (entry.Item2 == null)
                 {
                     //New Entry (not in log or decrypted file)
-                    preSyncDetails.Add(new PreSyncBuilder { EncrInfo = entry.Item1, EncrFileName = entry.Item1.RelativePath });
+                    preSyncDetails.Add(new ChangeBuilder { EncrInfo = entry.Item1, EncrFileName = entry.Item1.RelativePath });
                     encrStatAdd++;
                 }
                 else
@@ -144,10 +147,10 @@ namespace HelixSync
         /// <summary>
         /// Loads the EncrHeaders for new and updated encripted files
         /// </summary>
-        private void FindChanges_St5_RefreshEncrHeaders(ConsoleEx console, List<PreSyncBuilder> matchesA)
+        private void FindChanges_St5_RefreshEncrHeaders(ConsoleEx console, List<ChangeBuilder> matchesA)
         {
             int statsRefreshHeaderCount = 0;
-            foreach (PreSyncBuilder preSyncDetails in matchesA.Where(m => m.EncrInfo != null && m.EncrInfo.LastWriteTimeUtc != m.LogEntry?.EncrModified))
+            foreach (ChangeBuilder preSyncDetails in matchesA.Where(m => m.EncrInfo != null && m.EncrInfo.LastWriteTimeUtc != m.LogEntry?.EncrModified))
             {
                 string encrFullPath = Path.Combine(EncrDirectory.FullName, HelixUtil.PathNative(preSyncDetails.EncrFileName));
                 if (File.Exists(encrFullPath))
@@ -170,7 +173,7 @@ namespace HelixSync
         /// <summary>
         /// Adds parents, children and files with case only differences
         /// </summary>
-        private void FindChanges_St6_AddRelationships(List<PreSyncBuilder> matchesA)
+        private void FindChanges_St6_AddRelationships(List<ChangeBuilder> matchesA)
         {
             var indexedByParent = matchesA.GroupBy(m => Path.GetDirectoryName(m.DecrFileName)).ToDictionary(k => k.Key, k => k.ToList());
             var indexedByName = matchesA.GroupBy(m => m.DecrFileName).ToDictionary(k => k.Key, k => k.ToList());
@@ -190,7 +193,7 @@ namespace HelixSync
         }
 
 
-        private void FindChanges_St7_CalculateOperation(List<PreSyncBuilder> changes)
+        private void FindChanges_St7_CalculateOperation(List<ChangeBuilder> changes)
         {
             foreach (var change in changes)
             {
@@ -265,12 +268,12 @@ namespace HelixSync
         /// <summary>
         /// Adds the dependencies (pre-requisite for sort)
         /// </summary>
-        private void FindChanges_St8_CalculateDependencies(List<PreSyncBuilder> changes)
+        private void FindChanges_St8_CalculateDependencies(List<ChangeBuilder> changes)
         {
 
             foreach (var change in changes)
             {
-                HashSet<PreSyncBuilder> dependencies = new HashSet<PreSyncBuilder>();
+                HashSet<ChangeBuilder> dependencies = new HashSet<ChangeBuilder>();
                 if (change.DecrChange != PreSyncOperation.None)
                 {
                     if (change.DecrInfo == null || change.DecrInfo.EntryType == FileEntryType.Removed || change.DecrInfo.EntryType == FileEntryType.Purged)
@@ -314,11 +317,11 @@ namespace HelixSync
         /// <summary>
         /// Sorts the changes, readonly, ensuring proper dependency order
         /// </summary>
-        private static List<PreSyncBuilder> FindChanges_St9_Sort(RandomNumberGenerator rng, List<PreSyncBuilder> matchesA)
+        private static List<ChangeBuilder> FindChanges_St9_Sort(RandomNumberGenerator rng, List<ChangeBuilder> matchesA)
         {
-            List<PreSyncBuilder> NoDependents = new List<PreSyncBuilder>();
-            Dictionary<PreSyncBuilder, List<PreSyncBuilder>> DependencyLookup = new Dictionary<PreSyncBuilder, List<PreSyncBuilder>>();
-            Dictionary<PreSyncBuilder, List<PreSyncBuilder>> ReverseDependencyLookup = new Dictionary<PreSyncBuilder, List<PreSyncBuilder>>();
+            List<ChangeBuilder> NoDependents = new List<ChangeBuilder>();
+            Dictionary<ChangeBuilder, List<ChangeBuilder>> DependencyLookup = new Dictionary<ChangeBuilder, List<ChangeBuilder>>();
+            Dictionary<ChangeBuilder, List<ChangeBuilder>> ReverseDependencyLookup = new Dictionary<ChangeBuilder, List<ChangeBuilder>>();
             foreach (var match in matchesA)
             {
                 var dependencies = match.Dependencies;
@@ -331,13 +334,13 @@ namespace HelixSync
                     DependencyLookup.Add(match, dependencies.ToList());
                     foreach (var dependency in dependencies)
                     {
-                        if (!ReverseDependencyLookup.TryAdd(dependency, new List<PreSyncBuilder>() { match }))
+                        if (!ReverseDependencyLookup.TryAdd(dependency, new List<ChangeBuilder>() { match }))
                             ReverseDependencyLookup[dependency].Add(match);
                     }
                 }
             }
 
-            List<PreSyncBuilder> outputList = new List<PreSyncBuilder>();
+            List<ChangeBuilder> outputList = new List<ChangeBuilder>();
             while (NoDependents.Count > 0)
             {
 
@@ -372,5 +375,111 @@ namespace HelixSync
             return outputList;
         }
 
+        private static void FindChanges_St10_CalculateSyncMode(List<ChangeBuilder> changes)
+        {
+            foreach (var change in changes)
+            {
+                (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) encr = (change.EncrChange != PreSyncOperation.None,change.EncrHeader?.EntryType ?? FileEntryType.Removed, change.EncrHeader?.LastWriteTimeUtc ?? DateTime.MinValue, change.EncrHeader?.Length ?? 0);
+                (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) decr = (change.DecrChange != PreSyncOperation.None, change.DecrInfo?.EntryType ?? FileEntryType.Removed, change.DecrInfo?.LastWriteTimeUtc ?? DateTime.MinValue, change.DecrInfo?.Length ?? 0);
+
+                if (!encr.changed && !decr.changed)
+                {
+                    change.SyncMode = PreSyncMode.Unchanged;
+                    continue;
+                }
+
+                if (encr == decr)
+                {
+                    change.SyncMode = PreSyncMode.Match;
+                    continue;
+                }
+
+                if (decr.changed)
+                {
+                    if (decr.entryType == FileEntryType.File)
+                    {
+                        if (encr.changed)
+                        {
+                            change.SyncMode = PreSyncMode.Conflict;
+                            change.Conflicts.Add(ConflictType.BothSidesChanged);
+                            continue;
+                        }
+                        else
+                        {
+                            change.SyncMode = PreSyncMode.DecryptedSide;
+                            continue;
+                        }
+                    }
+                    else if (decr.entryType == FileEntryType.Directory)
+                    {
+                        if (encr.changed)
+                        {
+                            change.SyncMode = PreSyncMode.Conflict;
+                            change.Conflicts.Add(ConflictType.BothSidesChanged);
+                            continue;
+                        }
+                        else
+                        {
+                            change.SyncMode = PreSyncMode.DecryptedSide;
+                            continue;
+                        }
+                    }
+                    else if (decr.entryType == FileEntryType.Removed)
+                    {
+                        if (change.RelationChildren.Any(c =>
+                                c.DecrChange == PreSyncOperation.Add
+                                || c.DecrChange == PreSyncOperation.Change
+                                || c.EncrChange == PreSyncOperation.Add
+                                || c.EncrChange == PreSyncOperation.Change
+                                ))
+                        {
+                            change.SyncMode = PreSyncMode.Conflict;
+                            change.Conflicts.Add(ConflictType.NonEmptyFolder);
+                            continue;
+                        }
+
+                        change.SyncMode = PreSyncMode.DecryptedSide;
+                        continue;
+                    }
+
+                    throw new NotImplementedException();
+                }
+                else if (encr.changed)
+                {
+                    if (encr.entryType == FileEntryType.File)
+                    {
+                        change.SyncMode = PreSyncMode.EncryptedSide;
+                        continue;
+                    }
+                    else if (encr.entryType == FileEntryType.Directory)
+                    {
+                        change.SyncMode = PreSyncMode.EncryptedSide;
+                        continue;
+                    }
+                    else if (encr.entryType == FileEntryType.Removed)
+                    {
+                        if (change.RelationChildren.Any(c =>
+                                c.DecrChange == PreSyncOperation.Add
+                                || c.DecrChange == PreSyncOperation.Change
+                                || c.EncrChange == PreSyncOperation.Add
+                                || c.EncrChange == PreSyncOperation.Change
+                                ))
+                        {
+                            change.SyncMode = PreSyncMode.Conflict;
+                            change.Conflicts.Add(ConflictType.NonEmptyFolder);
+                            continue;
+                        }
+
+                        change.SyncMode = PreSyncMode.DecryptedSide;
+                        continue;
+                    }
+
+                    throw new NotImplementedException();
+                }
+
+            }
+        }
+
+        
     }
 }

@@ -157,7 +157,7 @@ namespace HelixSync
                             consoleEx.WriteLine($"    Decrypted - Modified: {decrModified}, Size: {decrSize}");
                             consoleEx.WriteLine($"    Encrypted - Modified: {encrModified}, Size: {encrSize}");
                             consoleEx.WriteLine($"");
-                            consoleEx.WriteLine($"    D - Decrypted, E - Encrypted, S - Skip, + - Always perform this action"); //todo: support newer, support always
+                            consoleEx.WriteLine($"    D - Decrypted, E - Encrypted, S - Skip, + Always perform this action"); //todo: support newer, support always
                             response = consoleEx.PromptChoice("    Select Option [D,E,S,D+,E+,S+]? ", new string[] { "D", "E", "S", "D+", "E+", "S+" }, "S");
                             if (response.EndsWith("+"))
                             {

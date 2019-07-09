@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace HelixSync
 {
-    class PreSyncBuilder
+    class ChangeBuilder
     {
         //three way join
         public SyncLogEntry LogEntry { get; set; }
@@ -19,9 +19,9 @@ namespace HelixSync
         public FileEntry EncrHeader { get; set; }
 
         //relationships
-        public List<PreSyncBuilder> RelationParents { get; internal set; }
-        public List<PreSyncBuilder> RelationCaseDifference { get; internal set; }
-        public List<PreSyncBuilder> RelationChildren { get; set; }
+        public List<ChangeBuilder> RelationParents { get; set; }
+        public List<ChangeBuilder> RelationCaseDifference { get; set; }
+        public List<ChangeBuilder> RelationChildren { get; set; }
 
 
         //operations
@@ -30,11 +30,12 @@ namespace HelixSync
         
         
         //dependencies
-        public List<PreSyncBuilder> Dependencies { get; set; }
+        public List<ChangeBuilder> Dependencies { get; set; }
 
-
-
-
+        //sync mode
+        public PreSyncMode SyncMode { get; set; }
+        public List<ConflictType> Conflicts { get; } = new List<ConflictType>();
+        
 
         public override string ToString()
         {
