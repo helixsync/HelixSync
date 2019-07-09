@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -9,6 +10,7 @@ using HelixSync.HelixDirectory;
 
 namespace HelixSync
 {
+    [DebuggerDisplay("{DecrDirectory.Name} <=> {EncrDirectory.Name}")]
     public class DirectoryPair : IDisposable
     {
         public FSDirectory DecrDirectory { get; }
@@ -32,7 +34,8 @@ namespace HelixSync
 
         public void PreInitializationCheck()
         {
-            if (!Directory.Exists(EncrDirectory.FullName)
+            
+            if (!EncrDirectory.Exists
                 && !Directory.Exists(Path.GetDirectoryName(EncrDirectory.FullName)))
             {
                 throw new Exception("Encrypted directory (and parent) does not exist");
@@ -42,11 +45,11 @@ namespace HelixSync
                 && !EncrDirectory.ChildExists(HelixConsts.HeaderFileName)
                 && EncrDirectory.GetEntries().Any())
             {
-                throw new Exception("Encrypted directory is not a valid HelixSync directory");
+                throw new Exception($"Unable to initialize, encrypted directory ({EncrDirectory.Name}) is not empty");
             }
 
 
-            if (!Directory.Exists(DecrDirectory.FullName)
+            if (!DecrDirectory.Exists
                 && !Directory.Exists(Path.GetDirectoryName(Path.GetFullPath(DecrDirectory.FullName))))
             {
                 throw new Exception("Decrypted directory (and parent) does not exist");
@@ -69,7 +72,7 @@ namespace HelixSync
             PreInitializationCheck();
 
             //Initialize Encr Directory
-            consoleEx.WriteLine(VerbosityLevel.Detailed, 0, "Initializing Encrypted Directory...");
+            consoleEx?.WriteLine(VerbosityLevel.Detailed, 0, "Initializing Encrypted Directory...");
             Header = DirectoryHeader.New();
             EncrDirectory.Create();
             if (WhatIf)
@@ -83,7 +86,7 @@ namespace HelixSync
             }
 
             this.FileNameEncoder = new FileNameEncoder(Header.FileNameKey);
-            consoleEx.WriteLine(VerbosityLevel.Detailed, 1, "Encrypted Directory Initialized (" + Header.DirectoryId.Substring(0, 6) + "...)");
+            consoleEx?.WriteLine(VerbosityLevel.Detailed, 1, "Encrypted Directory Initialized (" + Header.DirectoryId.Substring(0, 6) + "...)");
 
 
             InitializeDecr(consoleEx);
@@ -141,7 +144,7 @@ namespace HelixSync
             DecrDirectory.Cleanup(consoleEx);
         }
 
-        public void Reset()
+        public void ClearCache()
         {
             EncrDirectory.Reset();
             SyncLog.Reload();
@@ -152,10 +155,10 @@ namespace HelixSync
         /// <summary>
         /// Returns a list of changes that need to be performed as part of the sync.
         /// </summary>
-        public List<PreSyncDetails> FindChanges(bool reset = true, ConsoleEx console = null)
+        public List<PreSyncDetails> FindChanges(bool clearCache = true, ConsoleEx console = null)
         {//todo: disable default for reset
-            if (reset)
-                Reset();
+            if (clearCache)
+                ClearCache();
 
             var rng = RandomNumberGenerator.Create();
 
@@ -829,12 +832,12 @@ namespace HelixSync
         }
 
 
-        public static DirectoryPair Open(string encrDirectoryPath, string decrDirectoryPath, DerivedBytesProvider derivedBytesProvider, bool initialize = false, HelixFileVersion fileVersion = null)
+        public static DirectoryPair Open(string decrDirectoryPath, string encrDirectoryPath, DerivedBytesProvider derivedBytesProvider, bool initialize = false, HelixFileVersion fileVersion = null)
         {
             if (derivedBytesProvider == null)
                 throw new ArgumentNullException(nameof(derivedBytesProvider));
 
-            DirectoryPair pair = new DirectoryPair(encrDirectoryPath, decrDirectoryPath, derivedBytesProvider, false);
+            DirectoryPair pair = new DirectoryPair(decrDirectoryPath, encrDirectoryPath, derivedBytesProvider, false);
             if (initialize && pair.InitializeFullNeeded()) pair.InitializeFull(null, fileVersion);
             pair.OpenEncr(null);
             if (initialize && pair.InitializeDecrNeeded()) pair.InitializeDecr(null);

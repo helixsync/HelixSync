@@ -24,9 +24,11 @@ namespace HelixSync.Test
         {
 
         }
-        
-        public void SyncDecr1andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
+
+        #region Standard Sync
+        public (int ExitCode, List<PreSyncDetails> Changes) SyncDecr1andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
         {
+            List<PreSyncDetails> changes = new List<PreSyncDetails>();
             SyncOptions options = new SyncOptions
             {
                 DecrDirectory = Decr1.DirectoryPath,
@@ -39,15 +41,21 @@ namespace HelixSync.Test
                 BeforeWriteLine = (o) =>
                 {
                     if (o is PreSyncDetails preSync)
+                    {
                         onPreSyncDetails?.Invoke(preSync);
+                        changes.Add(preSync);
+                    }
                     System.Diagnostics.Debug.WriteLine(o);
                 }
             };
-            SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
+            var exitCode = SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
+            return (exitCode, changes);
         }
 
-        public void SyncDecr2andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
+        public (int ExitCode, List<PreSyncDetails> Changes) SyncDecr2andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
         {
+            List<PreSyncDetails> changes = new List<PreSyncDetails>();
+
             SyncOptions options = new SyncOptions
             {
                 DecrDirectory = Decr2.DirectoryPath,
@@ -60,13 +68,19 @@ namespace HelixSync.Test
                 BeforeWriteLine = (o) =>
                 {
                     if (o is PreSyncDetails preSync)
+                    {
                         onPreSyncDetails?.Invoke(preSync);
+                        changes.Add(preSync);
+                    }
                     System.Diagnostics.Debug.WriteLine(o);
                 }
             };
 
-            SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
+            var exitCode = SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
+
+            return (exitCode, changes);
         }
+        #endregion
 
         public SyncLogEntry[] Decr1AndEncr1SyncLog() 
         {
@@ -82,8 +96,13 @@ namespace HelixSync.Test
         public void SyncCommand_SimpleSync()
         {
             Decr1.UpdateTo("file1.txt < aa");
-            SyncDecr1andEncr1();
-            SyncDecr2andEncr1();
+            var sync1 = SyncDecr1andEncr1();
+            Assert.AreEqual(1, sync1.Changes.Count);
+
+            var sync2 = SyncDecr2andEncr1();
+            Assert.AreEqual(1, sync1.Changes.Count);
+
+
             Decr2.AssertEqual(new string[] { "file1.txt < aa" });
 
             Decr1.UpdateTo("file1.txt < aa",
@@ -95,6 +114,19 @@ namespace HelixSync.Test
                            "file2.txt < bb" }); ;
         }
         
+        [TestMethod]
+        public void SyncCommand_MultipleSyncUnchanged()
+        {  
+            Decr1.UpdateTo("file1.txt < aa");
+            var sync1 = SyncDecr1andEncr1();
+            var logLength = Decr1AndEncr1SyncLog().Length;
+            Assert.AreEqual(1, sync1.Changes.Count);
+            var sync2 = SyncDecr1andEncr1();
+            Assert.AreEqual(0, sync2.Changes.Count);
+            Assert.AreEqual(logLength, Decr1AndEncr1SyncLog().Length);
+        }
+
+
         [TestMethod]
         public void SyncCommand_DeleteThenReAdd()
         {

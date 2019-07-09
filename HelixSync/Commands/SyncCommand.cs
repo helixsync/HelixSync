@@ -111,7 +111,7 @@ namespace HelixSync
 
                 pair.Cleanup(consoleEx);
 
-                List<PreSyncDetails> changes = pair.FindChanges(reset: false, console: consoleEx);
+                List<PreSyncDetails> changes = pair.FindChanges(clearCache: false, console: consoleEx);
 
                 if (changes.Count == 0)
                     consoleEx.WriteLine("--No Changes--");

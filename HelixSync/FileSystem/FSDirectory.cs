@@ -3,12 +3,14 @@ using System.IO;
 using System.Linq;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace HelixSync.FileSystem
 {
     ///<summary>
     ///Provides a wrapper for a system directory. Supports -WhatIf (changes are not saved to disk)
     ///<summary>
+    [DebuggerDisplay("{Name}")]
     public class FSDirectory : FSEntry, IFSDirectoryCore
     {
         public FSDirectory(string path, bool whatIf)
@@ -256,9 +258,11 @@ namespace HelixSync.FileSystem
         {
             if (!WhatIf)
                 Directory.CreateDirectory(this.FullName);
-
-            this.Exists = true;
-            this.IsLoaded = true;
+            if (!Exists)
+            {
+                this.Exists = true;
+                this.IsLoaded = true;
+            }
         }
 
 
@@ -269,6 +273,9 @@ namespace HelixSync.FileSystem
         {
             if (string.IsNullOrEmpty(path))
                 throw new ArgumentNullException(nameof(path));
+
+            this.Load();
+
 
             path = HelixUtil.PathUniversal(path);
 
