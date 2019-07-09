@@ -20,12 +20,11 @@ namespace HelixSync.Test
     public class SyncCommand_Tests : IntegratedDirectoryTester
     {
 
-        public SyncCommand_Tests() 
+        public SyncCommand_Tests()
         {
 
         }
 
-        #region Standard Sync
         public (int ExitCode, List<PreSyncDetails> Changes) SyncDecr1andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
         {
             List<PreSyncDetails> changes = new List<PreSyncDetails>();
@@ -80,11 +79,10 @@ namespace HelixSync.Test
 
             return (exitCode, changes);
         }
-        #endregion
 
-        public SyncLogEntry[] Decr1AndEncr1SyncLog() 
+        public SyncLogEntry[] Decr1AndEncr1SyncLog()
         {
-            using(var pair = new DirectoryPair(Decr1.DirectoryPath, Encr1.DirectoryPath,  DerivedBytesProvider.FromPassword("secret"), true)) 
+            using (var pair = new DirectoryPair(Decr1.DirectoryPath, Encr1.DirectoryPath, DerivedBytesProvider.FromPassword("secret"), true))
             {
                 pair.OpenEncr(null);
                 pair.OpenDecr(null);
@@ -113,10 +111,10 @@ namespace HelixSync.Test
             Decr2.AssertEqual(new string[] { "file1.txt < aa",
                            "file2.txt < bb" }); ;
         }
-        
+
         [TestMethod]
         public void SyncCommand_MultipleSyncUnchanged()
-        {  
+        {
             Decr1.UpdateTo("file1.txt < aa");
             var sync1 = SyncDecr1andEncr1();
             var logLength = Decr1AndEncr1SyncLog().Length;
@@ -230,10 +228,12 @@ namespace HelixSync.Test
 
         public void DirectoryAreEqual(DirectoryTester tester, string content, string message)
         {
-            if (string.IsNullOrEmpty(message)) {
+            if (string.IsNullOrEmpty(message))
+            {
                 Assert.AreEqual(new DirectoryTester.DirectoryEntryCollection(content).ToString(), tester.GetContent().ToString());
             }
-            else {
+            else
+            {
                 Assert.IsTrue(new DirectoryTester.DirectoryEntryCollection(content).ToString() == tester.GetContent().ToString(),
                             message);
             }
@@ -266,7 +266,7 @@ namespace HelixSync.Test
             Encr1.Clear(new Regex("helix.hx"));
 
             SyncDecr1andEncr1();
- 
+
             {
                 var syncLog = Decr1AndEncr1SyncLog();
                 Assert.IsTrue(syncLog.Length == 0);
@@ -274,5 +274,16 @@ namespace HelixSync.Test
         }
 
 
+        [TestMethod]
+        public void SyncCommand_DeleteFolderOn1andAddFileOn2()
+        {
+            Decr1.UpdateTo(@"aa\001.txt < 001");
+            SyncDecr1andEncr1();
+            SyncDecr2andEncr1();
+            Decr1.UpdateTo(@"");
+            Decr2.UpdateTo(@"aa\001.txt < 001", @"aa\002.txt < 002");
+            SyncDecr2andEncr1();
+            Assert.Fail("should prompt for directory not empty conflict");
+        }
     }
 }
