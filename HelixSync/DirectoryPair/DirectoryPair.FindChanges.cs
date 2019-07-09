@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -49,6 +50,12 @@ namespace HelixSync
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Adding Relationships...");
             FindChanges_St6_AddRelationships(changes);
 
+#if DEBUG
+            Debug.Assert(changes.All(c => c.RelationParents != null));
+            Debug.Assert(changes.All(c => c.RelationChildren != null));
+            Debug.Assert(changes.All(c => c.RelationCaseDifference != null));
+#endif
+
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Operation...");
             FindChanges_St7_CalculateOperation(changes);
@@ -56,13 +63,18 @@ namespace HelixSync
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Dependencies...");
             FindChanges_St8_CalculateDependencies(changes);
 
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Sync Mode...");
+            FindChanges_St10_CalculateSyncMode(changes);
+            //todo: how to deal with conflicts when they could affect sort
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Sorting...");
             changes = FindChanges_St9_Sort(rng, changes);
 
 
-            FindChanges_St10_CalculateSyncMode(changes);
 
-            return changes.Select(m => m.ToSyncEntry()).ToList();
+            return changes
+                .Where(m => m.SyncMode != PreSyncMode.Unchanged)
+                .Select(m => m.ToSyncEntry())
+                .ToList();
         }
 
 
@@ -182,13 +194,13 @@ namespace HelixSync
             foreach (var match in matchesA)
             {
                 indexedByName.TryGetValue(Path.GetDirectoryName(match.DecrFileName), out var relationParents);
-                match.RelationParents = relationParents;
+                match.RelationParents = relationParents ?? new List<ChangeBuilder>();
 
                 indexedByUpperName.TryGetValue(match.DecrFileName.ToUpperInvariant(), out var relationCaseDifference);
-                match.RelationCaseDifference = relationCaseDifference;
+                match.RelationCaseDifference = relationCaseDifference ?? new List<ChangeBuilder>();
 
                 indexedByParent.TryGetValue(match.DecrFileName, out var relationChildren);
-                match.RelationChildren = relationChildren;
+                match.RelationChildren = relationChildren ?? new List<ChangeBuilder>();
             }
         }
 
@@ -470,7 +482,7 @@ namespace HelixSync
                             continue;
                         }
 
-                        change.SyncMode = PreSyncMode.DecryptedSide;
+                        change.SyncMode = PreSyncMode.EncryptedSide;
                         continue;
                     }
 

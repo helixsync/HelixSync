@@ -39,8 +39,31 @@ namespace HelixSync
 
         public override string ToString()
         {
-            return $"{(EncrFileName ?? "------").Substring(0, 6)}... {DecrFileName}";
+            string AsStrOp(PreSyncOperation op)
+            {
+                if (op == PreSyncOperation.Add) return "+";
+                if (op == PreSyncOperation.Change) return "~";
+                if (op == PreSyncOperation.Remove) return "-";
+                if (op == PreSyncOperation.Error) return "!";
+                if (op == PreSyncOperation.Purge) return "^";
+                if (op == PreSyncOperation.None) return "";
+                return "?";
+            }
+
+            string AsStrMode(PreSyncMode mode)
+            {
+                if (mode == PreSyncMode.Unknown) return "=?=";
+                if (mode == PreSyncMode.DecryptedSide) return "=>";
+                if (mode == PreSyncMode.EncryptedSide) return "<=";
+                if (mode == PreSyncMode.Match) return "~=";
+                if (mode == PreSyncMode.Unchanged) return "==";
+                return "=?=";
+            }
+
+            return $"{DecrFileName} {AsStrOp(DecrChange)}{AsStrMode(SyncMode)}{AsStrOp(EncrChange)} {EncrFileName}";
         }
+
+
 
         public PreSyncDetails ToSyncEntry()
         {

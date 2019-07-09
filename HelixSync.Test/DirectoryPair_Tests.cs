@@ -73,7 +73,8 @@ namespace HelixSync.Test
 
                 Assert.AreEqual(SyncStatus.Success, origToEncr.TrySync(changes[0]).SyncStatus);
 
-                Assert.IsTrue(0 == origToEncr.FindChanges(clearCache: true).Count, "Single file sync still contains changes");
+                changes = origToEncr.FindChanges(clearCache: true);
+                Assert.IsTrue(0 == changes.Count, "Single file sync still contains changes");
 
                 //New (Encr => Decr)
                 changes = encrToDecr.FindChanges(clearCache: true);
