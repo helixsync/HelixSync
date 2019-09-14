@@ -38,17 +38,17 @@ namespace HelixSync
 
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Performing 3 way join...");
-            List<ChangeBuilder> changes = FindChanges_St4_ThreeWayJoin(encrDirectoryFiles, decrDirectoryFiles, SyncLog, console).ToList();
+            List<ChangeBuilder> changes = FindChanges_St04_ThreeWayJoin(encrDirectoryFiles, decrDirectoryFiles, SyncLog, console).ToList();
 
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Refreshing EncrHeaders...");
-            FindChanges_St5_RefreshEncrHeaders(console, changes);
+            FindChanges_St05_RefreshEncrHeaders(console, changes);
 
 
             //todo: detect conflicts
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Adding Relationships...");
-            FindChanges_St6_AddRelationships(changes);
+            FindChanges_St06_AddRelationships(changes);
 
 #if DEBUG
             Debug.Assert(changes.All(c => c.RelationParents != null));
@@ -58,17 +58,16 @@ namespace HelixSync
 
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Operation...");
-            FindChanges_St7_CalculateOperation(changes);
+            FindChanges_St07_CalculateOperation(changes);
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Sync Mode...");
-            FindChanges_St10_CalculateSyncMode(changes);
+            FindChanges_St08_CalculateSyncMode(changes);
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Dependencies...");
-            FindChanges_St8_CalculateDependencies(changes);
+            FindChanges_St09_CalculateDependencies(changes);
 
-            //todo: how to deal with conflicts when they could affect sort
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Sorting...");
-            changes = FindChanges_St9_Sort(rng, changes);
+            changes = FindChanges_St10_Sort(rng, changes);
 
 
 
@@ -83,7 +82,7 @@ namespace HelixSync
         /// <summary>
         /// Matches files from Encr, Decr and Log Entry
         /// </summary>
-        private List<ChangeBuilder> FindChanges_St4_ThreeWayJoin(List<FSEntry> encrDirectoryFiles, List<FSEntry> decrDirectoryFiles, SyncLog syncLog, ConsoleEx console)
+        private List<ChangeBuilder> FindChanges_St04_ThreeWayJoin(List<FSEntry> encrDirectoryFiles, List<FSEntry> decrDirectoryFiles, SyncLog syncLog, ConsoleEx console)
         {
             List<ChangeBuilder> preSyncDetails = new List<ChangeBuilder>();
 
@@ -160,7 +159,7 @@ namespace HelixSync
         /// <summary>
         /// Loads the EncrHeaders for new and updated encripted files
         /// </summary>
-        private void FindChanges_St5_RefreshEncrHeaders(ConsoleEx console, List<ChangeBuilder> matchesA)
+        private void FindChanges_St05_RefreshEncrHeaders(ConsoleEx console, List<ChangeBuilder> matchesA)
         {
             int statsRefreshHeaderCount = 0;
             foreach (ChangeBuilder preSyncDetails in matchesA.Where(m => m.EncrInfo != null && m.EncrInfo.LastWriteTimeUtc != m.LogEntry?.EncrModified))
@@ -186,7 +185,7 @@ namespace HelixSync
         /// <summary>
         /// Adds parents, children and files with case only differences
         /// </summary>
-        private void FindChanges_St6_AddRelationships(List<ChangeBuilder> matchesA)
+        private void FindChanges_St06_AddRelationships(List<ChangeBuilder> matchesA)
         {
             var indexedByParent = matchesA.GroupBy(m => Path.GetDirectoryName(m.DecrFileName)).ToDictionary(k => k.Key, k => k.ToList());
             var indexedByName = matchesA.GroupBy(m => m.DecrFileName).ToDictionary(k => k.Key, k => k.ToList());
@@ -206,7 +205,7 @@ namespace HelixSync
         }
 
 
-        private void FindChanges_St7_CalculateOperation(List<ChangeBuilder> changes)
+        private void FindChanges_St07_CalculateOperation(List<ChangeBuilder> changes)
         {
             foreach (var change in changes)
             {
@@ -284,121 +283,12 @@ namespace HelixSync
             }
         }
 
-        /// <summary>
-        /// Adds the dependencies (pre-requisite for sort)
-        /// </summary>
-        private void FindChanges_St8_CalculateDependencies(List<ChangeBuilder> changes)
-        {
 
-            foreach (var change in changes)
-            {
-                HashSet<ChangeBuilder> dependencies = new HashSet<ChangeBuilder>();
-                if (change.SyncMode == PreSyncMode.DecryptedSide || change.SyncMode == PreSyncMode.Conflict)
-                {
-                    if (change.DecrInfo == null || change.DecrInfo.EntryType == FileEntryType.Removed || change.DecrInfo.EntryType == FileEntryType.Purged)
-                    {
-                        change.RelationChildren?.ForEach(r => dependencies.Add(r));
-                    }
-                    else
-                    {
-                        change.RelationParents?.ForEach(r => dependencies.Add(r));
-                        change.RelationCaseDifference?.Where(r => r != change && r.DecrChange == PreSyncOperation.Remove)
-                            ?.ToList()?.ForEach(r => dependencies.Add(r));
-                        change.RelationCaseDifference
-                            ?.Where(r => r.DecrFileName.CompareTo(change.DecrFileName) < 0)
-                            ?.ToList()?.ForEach(r => dependencies.Add(r));
-                    }
-                }
-
-
-                if (change.SyncMode == PreSyncMode.EncryptedSide || change.SyncMode == PreSyncMode.Conflict)
-                {
-                    if (change.EncrHeader == null || change.EncrHeader.EntryType == FileEntryType.Removed || change.EncrHeader.EntryType == FileEntryType.Purged)
-                    {
-                        change.RelationChildren?.ForEach(r => dependencies.Add(r));
-                    }
-                    else
-                    {
-                        change.RelationParents?.ForEach(r => dependencies.Add(r));
-
-                        change.RelationCaseDifference?.Where(r => r != change && r.EncrChange == PreSyncOperation.Remove)
-                            ?.ToList()?.ForEach(r => dependencies.Add(r));
-                        change.RelationCaseDifference
-                            ?.Where(r => r.DecrFileName.CompareTo(change.DecrFileName) < 0)
-                            ?.ToList()?.ForEach(r => dependencies.Add(r));
-                    }
-                }
-
-                change.Dependencies = dependencies.ToList(); 
-            }
-        }
-
-        /// <summary>
-        /// Sorts the changes, readonly, ensuring proper dependency order
-        /// </summary>
-        private static List<ChangeBuilder> FindChanges_St9_Sort(RandomNumberGenerator rng, List<ChangeBuilder> matchesA)
-        {
-            List<ChangeBuilder> NoDependents = new List<ChangeBuilder>();
-            Dictionary<ChangeBuilder, List<ChangeBuilder>> DependencyLookup = new Dictionary<ChangeBuilder, List<ChangeBuilder>>();
-            Dictionary<ChangeBuilder, List<ChangeBuilder>> ReverseDependencyLookup = new Dictionary<ChangeBuilder, List<ChangeBuilder>>();
-            foreach (var match in matchesA)
-            {
-                var dependencies = match.Dependencies;
-                if (dependencies.Count == 0)
-                {
-                    NoDependents.Add(match);
-                }
-                else
-                {
-                    DependencyLookup.Add(match, dependencies.ToList());
-                    foreach (var dependency in dependencies)
-                    {
-                        if (!ReverseDependencyLookup.TryAdd(dependency, new List<ChangeBuilder>() { match }))
-                            ReverseDependencyLookup[dependency].Add(match);
-                    }
-                }
-            }
-
-            List<ChangeBuilder> outputList = new List<ChangeBuilder>();
-            while (NoDependents.Count > 0)
-            {
-
-                byte[] rno = new byte[5];
-                rng.GetBytes(rno);
-                int randomvalue = (int)(BitConverter.ToUInt32(rno, 0) % (uint)NoDependents.Count);
-
-                var next = NoDependents[randomvalue];
-                NoDependents.RemoveAt(randomvalue);
-                outputList.Add(next);
-
-                //clear dependents, adds to the NoDependents list if possible
-                if (ReverseDependencyLookup.TryGetValue(next, out var children))
-                {
-                    foreach (var child in children)
-                    {
-                        DependencyLookup[child].Remove(next);
-                        if (DependencyLookup[child].Count == 0)
-                        {
-                            DependencyLookup.Remove(child);
-                            NoDependents.Add(child);
-                        }
-                    }
-                    ReverseDependencyLookup.Remove(next);
-                }
-
-            }
-
-            if (ReverseDependencyLookup.Count > 0)
-                throw new Exception("Unexpected circular reference found when sorting presyncdetails");
-
-            return outputList;
-        }
-
-        private static void FindChanges_St10_CalculateSyncMode(List<ChangeBuilder> changes)
+        private static void FindChanges_St08_CalculateSyncMode(List<ChangeBuilder> changes)
         {
             foreach (var change in changes)
             {
-                (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) encr = (change.EncrChange != PreSyncOperation.None,change.EncrHeader?.EntryType ?? FileEntryType.Removed, change.EncrHeader?.LastWriteTimeUtc ?? DateTime.MinValue, change.EncrHeader?.Length ?? 0);
+                (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) encr = (change.EncrChange != PreSyncOperation.None, change.EncrHeader?.EntryType ?? FileEntryType.Removed, change.EncrHeader?.LastWriteTimeUtc ?? DateTime.MinValue, change.EncrHeader?.Length ?? 0);
                 (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) decr = (change.DecrChange != PreSyncOperation.None, change.DecrInfo?.EntryType ?? FileEntryType.Removed, change.DecrInfo?.LastWriteTimeUtc ?? DateTime.MinValue, change.DecrInfo?.Length ?? 0);
 
                 if (!encr.changed && !decr.changed)
@@ -502,6 +392,117 @@ namespace HelixSync
 
             }
         }
+
+        /// <summary>
+        /// Adds the dependencies (pre-requisite for sort)
+        /// </summary>
+        private void FindChanges_St09_CalculateDependencies(List<ChangeBuilder> changes)
+        {
+
+            foreach (var change in changes)
+            {
+                HashSet<ChangeBuilder> dependencies = new HashSet<ChangeBuilder>();
+                if (change.SyncMode == PreSyncMode.DecryptedSide || change.SyncMode == PreSyncMode.Conflict)
+                {
+                    if (change.DecrInfo == null || change.DecrInfo.EntryType == FileEntryType.Removed || change.DecrInfo.EntryType == FileEntryType.Purged)
+                    {
+                        change.RelationChildren?.ForEach(r => dependencies.Add(r));
+                    }
+                    else
+                    {
+                        change.RelationParents?.ForEach(r => dependencies.Add(r));
+                        change.RelationCaseDifference?.Where(r => r != change && r.DecrChange == PreSyncOperation.Remove)
+                            ?.ToList()?.ForEach(r => dependencies.Add(r));
+                        change.RelationCaseDifference
+                            ?.Where(r => r.DecrFileName.CompareTo(change.DecrFileName) < 0)
+                            ?.ToList()?.ForEach(r => dependencies.Add(r));
+                    }
+                }
+
+
+                if (change.SyncMode == PreSyncMode.EncryptedSide || change.SyncMode == PreSyncMode.Conflict)
+                {
+                    if (change.EncrHeader == null || change.EncrHeader.EntryType == FileEntryType.Removed || change.EncrHeader.EntryType == FileEntryType.Purged)
+                    {
+                        change.RelationChildren?.ForEach(r => dependencies.Add(r));
+                    }
+                    else
+                    {
+                        change.RelationParents?.ForEach(r => dependencies.Add(r));
+
+                        change.RelationCaseDifference?.Where(r => r != change && r.EncrChange == PreSyncOperation.Remove)
+                            ?.ToList()?.ForEach(r => dependencies.Add(r));
+                        change.RelationCaseDifference
+                            ?.Where(r => r.DecrFileName.CompareTo(change.DecrFileName) < 0)
+                            ?.ToList()?.ForEach(r => dependencies.Add(r));
+                    }
+                }
+
+                change.Dependencies = dependencies.ToList(); 
+            }
+        }
+
+        /// <summary>
+        /// Sorts the changes, readonly, ensuring proper dependency order
+        /// </summary>
+        private static List<ChangeBuilder> FindChanges_St10_Sort(RandomNumberGenerator rng, List<ChangeBuilder> matchesA)
+        {
+            List<ChangeBuilder> NoDependents = new List<ChangeBuilder>();
+            Dictionary<ChangeBuilder, List<ChangeBuilder>> DependencyLookup = new Dictionary<ChangeBuilder, List<ChangeBuilder>>();
+            Dictionary<ChangeBuilder, List<ChangeBuilder>> ReverseDependencyLookup = new Dictionary<ChangeBuilder, List<ChangeBuilder>>();
+            foreach (var match in matchesA)
+            {
+                var dependencies = match.Dependencies;
+                if (dependencies.Count == 0)
+                {
+                    NoDependents.Add(match);
+                }
+                else
+                {
+                    DependencyLookup.Add(match, dependencies.ToList());
+                    foreach (var dependency in dependencies)
+                    {
+                        if (!ReverseDependencyLookup.TryAdd(dependency, new List<ChangeBuilder>() { match }))
+                            ReverseDependencyLookup[dependency].Add(match);
+                    }
+                }
+            }
+
+            List<ChangeBuilder> outputList = new List<ChangeBuilder>();
+            while (NoDependents.Count > 0)
+            {
+
+                byte[] rno = new byte[5];
+                rng.GetBytes(rno);
+                int randomvalue = (int)(BitConverter.ToUInt32(rno, 0) % (uint)NoDependents.Count);
+
+                var next = NoDependents[randomvalue];
+                NoDependents.RemoveAt(randomvalue);
+                outputList.Add(next);
+
+                //clear dependents, adds to the NoDependents list if possible
+                if (ReverseDependencyLookup.TryGetValue(next, out var children))
+                {
+                    foreach (var child in children)
+                    {
+                        DependencyLookup[child].Remove(next);
+                        if (DependencyLookup[child].Count == 0)
+                        {
+                            DependencyLookup.Remove(child);
+                            NoDependents.Add(child);
+                        }
+                    }
+                    ReverseDependencyLookup.Remove(next);
+                }
+
+            }
+
+            if (ReverseDependencyLookup.Count > 0)
+                throw new Exception("Unexpected circular reference found when sorting presyncdetails");
+
+            return outputList;
+        }
+
 
         
     }
