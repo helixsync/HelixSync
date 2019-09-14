@@ -238,8 +238,14 @@ namespace HelixSync
                 }
 
 
+                if (change.LogEntry?.EntryType == FileEntryType.Removed 
+                    && change.EncrInfo == null)
+                {
+                    encrChange = PreSyncOperation.Purge;
+                }
+
                 //test if the encr info matches the log (this is the quicker method)
-                if ((change.LogEntry == null || change.LogEntry.EntryType == FileEntryType.Removed || change.LogEntry.EntryType == FileEntryType.Purged)
+                else if ((change.LogEntry == null || change.LogEntry.EntryType == FileEntryType.Removed || change.LogEntry.EntryType == FileEntryType.Purged)
                     && (change.EncrInfo == null || change.EncrInfo.EntryType == FileEntryType.Removed || change.EncrInfo.EntryType == FileEntryType.Purged))
                 {
                     encrChange = PreSyncOperation.None;

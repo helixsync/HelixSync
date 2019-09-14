@@ -22,7 +22,7 @@ namespace HelixSync
                 consoleEx.WriteLine("..Options: WhatIf");
             consoleEx.WriteLine($"..DecrDir: {options.DecrDirectory}");
             consoleEx.WriteLine($"..EncrDir: {options.EncrDirectory}");
-            consoleEx.WriteLine($"..Direction: {options.Direction}");
+            //consoleEx.WriteLine($"..Direction: {options.Direction}");
             consoleEx.WriteLine($"..Verbosity: {options.Verbosity}");
 
             consoleEx.WriteLine();
