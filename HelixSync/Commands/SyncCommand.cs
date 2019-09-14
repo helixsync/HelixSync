@@ -136,10 +136,7 @@ namespace HelixSync
                 consoleEx.WriteLine(VerbosityLevel.Normal, 0, "Performing Sync...");
                 foreach (PreSyncDetails change in changes)
                 {
-                    pair.RefreshPreSyncDetails(change);
                     consoleEx.WriteLine(change);
-
-                    //todo: prompt on conflict
 
                     if (change.SyncMode == PreSyncMode.Conflict)
                     {

@@ -60,11 +60,12 @@ namespace HelixSync
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Operation...");
             FindChanges_St7_CalculateOperation(changes);
 
+            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Sync Mode...");
+            FindChanges_St10_CalculateSyncMode(changes);
+
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Dependencies...");
             FindChanges_St8_CalculateDependencies(changes);
 
-            console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Calculating Sync Mode...");
-            FindChanges_St10_CalculateSyncMode(changes);
             //todo: how to deal with conflicts when they could affect sort
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Sorting...");
             changes = FindChanges_St9_Sort(rng, changes);
@@ -286,7 +287,7 @@ namespace HelixSync
             foreach (var change in changes)
             {
                 HashSet<ChangeBuilder> dependencies = new HashSet<ChangeBuilder>();
-                if (change.DecrChange != PreSyncOperation.None)
+                if (change.SyncMode == PreSyncMode.DecryptedSide || change.SyncMode == PreSyncMode.Conflict)
                 {
                     if (change.DecrInfo == null || change.DecrInfo.EntryType == FileEntryType.Removed || change.DecrInfo.EntryType == FileEntryType.Purged)
                     {
@@ -304,7 +305,7 @@ namespace HelixSync
                 }
 
 
-                if (change.EncrChange != PreSyncOperation.None)
+                if (change.SyncMode == PreSyncMode.EncryptedSide || change.SyncMode == PreSyncMode.Conflict)
                 {
                     if (change.EncrHeader == null || change.EncrHeader.EntryType == FileEntryType.Removed || change.EncrHeader.EntryType == FileEntryType.Purged)
                     {
@@ -445,7 +446,10 @@ namespace HelixSync
                                 || c.EncrChange == PreSyncOperation.Change
                                 ))
                         {
-                            change.SyncMode = PreSyncMode.Conflict;
+                            //forces a decript change so we can sync added files
+                            change.SyncMode = PreSyncMode.DecryptedSide;
+                            change.DecrChange = PreSyncOperation.Add;
+
                             change.Conflicts.Add(ConflictType.NonEmptyFolder);
                             continue;
                         }
@@ -477,7 +481,8 @@ namespace HelixSync
                                 || c.EncrChange == PreSyncOperation.Change
                                 ))
                         {
-                            change.SyncMode = PreSyncMode.Conflict;
+                            change.SyncMode = PreSyncMode.DecryptedSide;
+                            change.DecrChange = PreSyncOperation.Add;
                             change.Conflicts.Add(ConflictType.NonEmptyFolder);
                             continue;
                         }

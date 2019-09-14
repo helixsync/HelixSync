@@ -74,9 +74,61 @@ namespace HelixSync
                 EncrInfo = EncrInfo,
                 EncrHeader = EncrHeader,
                 EncrFileName = EncrFileName,
-                DecrFileName = DecrFileName
+                DecrFileName = DecrFileName,
+                SyncMode = SyncMode
             };
-            DirectoryPair.RefreshPreSyncMode(val);
+
+            if (SyncMode == PreSyncMode.DecryptedSide)
+            {
+                val.DisplayEntryType = val.DecrInfo?.EntryType ?? FileEntryType.Removed;
+                val.DisplayFileLength = val.DecrInfo?.Length ?? val.EncrHeader?.Length ?? 0;
+
+                if (val.DecrInfo == null || val.DecrInfo.EntryType == FileEntryType.Removed)
+                    val.DisplayOperation = PreSyncOperation.Remove;
+                else if (val.EncrInfo == null || val.EncrInfo.EntryType == FileEntryType.Removed)
+                    val.DisplayOperation = PreSyncOperation.Add;
+                else if (val.EncrHeader?.EntryType == FileEntryType.Removed)
+                    val.DisplayOperation = PreSyncOperation.Add;
+                else
+                    val.DisplayOperation = PreSyncOperation.Change;
+            }
+            else if (val.SyncMode == PreSyncMode.EncryptedSide)
+            {
+                val.DisplayEntryType = val.EncrHeader?.EntryType ?? FileEntryType.Removed;
+                val.DisplayFileLength = val.EncrHeader?.Length ?? val.DecrInfo?.Length ?? 0;
+
+                if ((val.EncrInfo?.EntryType == FileEntryType.Removed || val.EncrInfo?.EntryType == null)
+                     && val.LogEntry.EntryType == FileEntryType.Removed)
+                {
+                    val.DisplayEntryType = FileEntryType.Purged;
+                    val.DisplayFileLength = 0;
+                    val.DisplayOperation = PreSyncOperation.Purge;
+                }
+                else if (val.EncrInfo == null || val.EncrInfo.EntryType == FileEntryType.Removed)
+                    val.DisplayOperation = PreSyncOperation.Remove;
+                else if (val.EncrHeader?.EntryType == FileEntryType.Removed)
+                    val.DisplayOperation = PreSyncOperation.Remove;
+                else if (val.DecrInfo == null || val.DecrInfo.EntryType == FileEntryType.Removed)
+                    val.DisplayOperation = PreSyncOperation.Add;
+                else
+                    val.DisplayOperation = PreSyncOperation.Change;
+            }
+            else if (val.SyncMode == PreSyncMode.Match || val.SyncMode == PreSyncMode.Unchanged)
+            {
+                val.DisplayEntryType = val.DecrInfo?.EntryType ?? FileEntryType.Removed;
+                val.DisplayFileLength = val.DecrInfo?.Length ?? val.EncrHeader?.Length ?? 0;
+
+                val.DisplayOperation = PreSyncOperation.None;
+            }
+            else
+            {
+                val.DisplayEntryType = val.DecrInfo?.EntryType ?? FileEntryType.Removed;
+                val.DisplayFileLength = val.DecrInfo?.Length ?? val.EncrHeader?.Length ?? 0;
+
+                val.DisplayOperation = PreSyncOperation.Error;
+            }
+
+
             return val;
         }
     }

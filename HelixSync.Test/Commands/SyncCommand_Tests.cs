@@ -278,15 +278,21 @@ namespace HelixSync.Test
         public void SyncCommand_DeleteFolderOn1andAddFileOn2()
         {
             Decr1.UpdateTo(@"aa\001.txt < 001");
+            Decr2.UpdateTo(@"");
             SyncDecr1andEncr1();
             SyncDecr2andEncr1();
 
-            Decr1.UpdateTo(@"");
+            Decr1.UpdateTo(@""); //removes file and directory
+            Decr2.UpdateTo( //add file to directory
+                @"aa\001.txt < 001",
+                @"aa\002.txt < 002");
             SyncDecr1andEncr1();
 
-            Decr2.UpdateTo(@"aa\001.txt < 001", @"aa\002.txt < 002");
             SyncDecr2andEncr1();
-            Assert.Fail("should prompt for directory not empty conflict");
+            Decr2.AssertEqual(new string[] { @"aa/", @"aa\002.txt < 002" });
+
+            SyncDecr1andEncr1();
+            Decr1.AssertEqual(new string[] { @"aa/", @"aa\002.txt < 002" });
         }
     }
 }
