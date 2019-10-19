@@ -11,9 +11,7 @@ namespace HelixSync
     {
         public string Password { get; set; }
         public bool NonInteractive { get; set; }
-        //public bool WhatIf { get; set; }
 
-        //todo: implement the various content formats
         [DefaultValue("auto")]
         [Description(@"Describes how to format the content for inspection
   auto:   attempts to detect type automatically

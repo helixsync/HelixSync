@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <Version>0.1.0.0</Version>
-    <Copyright>Copyright © 2017</Copyright>
+    <Copyright>Copyright © 2017-2019</Copyright>
     <DefineConstants></DefineConstants>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>

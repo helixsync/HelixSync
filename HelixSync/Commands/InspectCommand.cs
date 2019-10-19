@@ -44,7 +44,7 @@ namespace HelixSync
                 consoleEx.WriteLine();
 
                 using Stream content = decryptor.GetContentStream();
-                ContentPreview(content, consoleEx);
+                ContentPreview(content, consoleEx, options.ContentFormat);
                 consoleEx.WriteLine();
             }
 
@@ -74,10 +74,12 @@ namespace HelixSync
 
             consoleEx.WriteLine("== Content Checksum (MD5) ==");
             using MD5 md5 = MD5.Create();
-            consoleEx.Write("[    ] Calculating MD5...".PadRight(40) + new string('\b', 40));
-            void onProgressChange(double p) => consoleEx.Write($"[{p:0,4:0%}]" + new string('\b', 6));
+
+            consoleEx.Write("[      ] Calculating MD5...".PadRight(40) + new string('\b', 40));
+            void onProgressChange(double p) => consoleEx.Write($"[{p:0,4:0%}]" + new string('\b', 8));
             var checksum = md5.ComputeHash(new ProgressStream(stream, onProgressChange));
             consoleEx.Write(new string(' ', 40) + new string('\b', 40)); //Clears the line
+
             consoleEx.WriteLine("MD5: " + BitConverter.ToString(checksum).Replace("-", ""));
         }
 
@@ -165,6 +167,9 @@ namespace HelixSync
             const int defaultLength = 512;
             const int defaultBinaryLength = 256;
 
+            
+
+
             int offset = 0;
             byte[] content = new byte[targetLength <= 0 ? defaultLength : targetLength];
             int length = stream.Read(content, 0, content.Length);
@@ -174,8 +179,8 @@ namespace HelixSync
             if (string.IsNullOrEmpty(type) || type == "auto")
                 type = DetectType(content, offset, length);
 
-            //Reduces size by two for binary due to the fact that it takes a lot of screen realistate
-            if (type == "binary" && targetLength < 0)
+            //Reduces size by two for binary due to the fact that it takes a lot of screen realestate
+            if (type == "binary" && targetLength < 0 && length > defaultBinaryLength)
                 length = defaultBinaryLength;
 
 
@@ -185,7 +190,7 @@ namespace HelixSync
                 display = "== Content Preview (" + type + " " + FormatSizeBytes(length) + " of " + FormatSizeBytes(stream.Length) + ") ==" + Environment.NewLine;
             }
             else
-                display = "== Content Preview (" + type + " " + FormatSizeBytes(stream.Length) + ") ==" + Environment.NewLine;
+                display = "== Content Preview (" + type + ", size: " + FormatSizeBytes(stream.Length) + ") ==" + Environment.NewLine;
 
             if (type == "text")
             {
