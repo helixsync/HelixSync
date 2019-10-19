@@ -66,8 +66,10 @@ namespace HelixSync
             fullPath = HelixUtil.PathNative(fullPath);
 
             string casedFullPath = HelixUtil.GetExactPathName(fullPath);
-            FileEntry fileInfo = new FileEntry();
-            fileInfo.FileName = HelixUtil.PathUniversal(HelixUtil.RemoveRootFromPath(fullPath, root));
+            FileEntry fileInfo = new FileEntry
+            {
+                FileName = HelixUtil.PathUniversal(HelixUtil.RemoveRootFromPath(fullPath, root))
+            };
 
             var fi = new FileInfo(casedFullPath);
 

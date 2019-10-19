@@ -23,7 +23,7 @@ namespace HelixSync
             if (derivedBytesProvider == null)
                 throw new ArgumentNullException(nameof(derivedBytesProvider));
 
-            options = options ?? new FileEncryptOptions();
+            options ??= new FileEncryptOptions();
 
             var encrStagedFileName = encrFilePath + HelixConsts.StagedHxExtention;
             var encrBackupFileName = encrFilePath + HelixConsts.BackupExtention;
@@ -88,7 +88,7 @@ namespace HelixSync
             if (derivedBytesProvider == null)
                 throw new ArgumentNullException(nameof(derivedBytesProvider));
 
-            options = options ?? new FileDecryptOptions();
+            options ??= new FileDecryptOptions();
 
             using (FileStream inputStream = File.OpenRead(encrPath))
             using (HelixFileDecryptor decryptor = new HelixFileDecryptor(inputStream))
@@ -183,29 +183,26 @@ namespace HelixSync
         /// </summary>
         public static FileEntry DecryptHeader(string encrFile, DerivedBytesProvider derivedBytesProvider)
         {
-            using (var inputStream = File.OpenRead(encrFile))
-            using (var decryptor = new HelixFileDecryptor(inputStream))
+            using var inputStream = File.OpenRead(encrFile);
+            using var decryptor = new HelixFileDecryptor(inputStream);
+            try
             {
+                decryptor.Initialize(derivedBytesProvider);
 
-                try
-                {
-                    decryptor.Initialize(derivedBytesProvider);
+                FileEntry header = decryptor.ReadHeader();
 
-                    FileEntry header = decryptor.ReadHeader();
+                if (!header.IsValid(out HeaderCorruptionException ex))
+                    throw ex;
 
-                    if (!header.IsValid(out HeaderCorruptionException ex))
-                        throw ex;
-
-                    return header;
-                }
-                catch (FileCorruptionException ex)
-                {
-                    throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
-                }
-                catch (AuthenticatedEncryptionException ex)
-                {
-                    throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
-                }
+                return header;
+            }
+            catch (FileCorruptionException ex)
+            {
+                throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
+            }
+            catch (AuthenticatedEncryptionException ex)
+            {
+                throw new FileCorruptionException($"Failed to decrypt {encrFile}, {ex.Message}", ex);
             }
         }
     }

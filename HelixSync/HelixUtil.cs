@@ -124,7 +124,7 @@ namespace HelixSync
                 return "";
 
             if (!root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-                root = root + Path.DirectorySeparatorChar;
+                root += Path.DirectorySeparatorChar;
 
             if (!path.StartsWith(root, StringComparison.Ordinal))
                 throw new ArgumentOutOfRangeException(nameof(path), "path must start with the root directory (path:" + path + ", root: " + root + ")");
@@ -210,7 +210,7 @@ namespace HelixSync
                 value.Substring(value.Length - 1, 1) != "\"")
                 throw new FormatException("value must start and end with a quote (\")");
 
-            value = value.Substring(1, value.Length - 2);
+            value = value[1..^1];
 
             return Regex.Replace(value, "\\\\.", (m) =>
             {
@@ -247,7 +247,7 @@ namespace HelixSync
                 else if (dblSByte >= 10 && dblSByte <= 1000)
                     return string.Format("{0,3:0}{1,-2}", dblSByte, unit);
 
-                dblSByte = dblSByte / 1024.0;
+                dblSByte /= 1024.0;
             }
 
             return "MAX  ";

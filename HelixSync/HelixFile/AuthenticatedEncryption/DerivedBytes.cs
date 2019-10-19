@@ -10,13 +10,8 @@ namespace HelixSync
     {
         public DerivedBytes(byte[] key, byte[] salt, int derivedBytesIterations)
         {
-            if (key == null)
-                throw new ArgumentNullException(nameof(key));
-            if (salt == null)
-                throw new ArgumentNullException(nameof(salt));
-
-            this.Key = key;
-            this.Salt = salt;
+            this.Key = key ?? throw new ArgumentNullException(nameof(key));
+            this.Salt = salt ?? throw new ArgumentNullException(nameof(salt));
             this.DerivedBytesIterations = derivedBytesIterations;
         }
 

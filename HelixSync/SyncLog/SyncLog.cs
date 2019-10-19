@@ -14,7 +14,7 @@ namespace HelixSync
     public class SyncLog : IEnumerable<SyncLogEntry>, IDisposable
     {
 
-        private Dictionary<string, SyncLogEntry> LogEntriesByKey = new Dictionary<string, SyncLogEntry>();
+        private readonly Dictionary<string, SyncLogEntry> LogEntriesByKey = new Dictionary<string, SyncLogEntry>();
 
         private readonly string path;
         private StreamWriter writer;
@@ -46,7 +46,7 @@ namespace HelixSync
 
             if (LogEntriesByKey.ContainsKey(key))
             {
-                var removeEntry = LogEntriesByKey[key];
+                _ = LogEntriesByKey[key];
                 LogEntriesByKey.Remove(key);
             }
 
@@ -133,20 +133,18 @@ namespace HelixSync
 
             if (File.Exists(path))
             {
-                using (var reader = File.OpenText(path))
+                using var reader = File.OpenText(path);
+                while (!reader.EndOfStream)
                 {
-                    while (!reader.EndOfStream)
-                    {
-                        var line = reader.ReadLine();
-                        if (line.StartsWith("#") || string.IsNullOrEmpty(line))
-                            continue; //comment (ignore)
+                    var line = reader.ReadLine();
+                    if (line.StartsWith("#") || string.IsNullOrEmpty(line))
+                        continue; //comment (ignore)
 
-                        var logEntry = SyncLogEntry.TryParseFromString(line);
-                        if (logEntry != null)
-                        {
-                            ToMemory(logEntry);
-                            LastEntry = logEntry;
-                        }
+                    var logEntry = SyncLogEntry.TryParseFromString(line);
+                    if (logEntry != null)
+                    {
+                        ToMemory(logEntry);
+                        LastEntry = logEntry;
                     }
                 }
             }

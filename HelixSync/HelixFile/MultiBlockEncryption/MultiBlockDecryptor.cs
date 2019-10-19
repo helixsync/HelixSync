@@ -31,7 +31,7 @@ namespace HelixSync
             get { return Decryptor.FileVersion; }
         }
 
-        AuthenticatedDecryptor Decryptor;
+        readonly AuthenticatedDecryptor Decryptor;
 
 
         public void Initialize(DerivedBytesProvider derivedBytesProvider, Action<Dictionary<string, byte[]>> afterHeaderRead = null)

@@ -112,7 +112,7 @@ namespace HelixSync.FileSystem
                 return "";
 
             if (!root.EndsWith(HelixUtil.UniversalDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-                root = root + HelixUtil.UniversalDirectorySeparatorChar;
+                root += HelixUtil.UniversalDirectorySeparatorChar;
 
             if (!path.StartsWith(root, StringComparison.Ordinal))
                 throw new ArgumentOutOfRangeException(nameof(path), "path must start with the root directory (path:" + path + ", root: " + root + ")");

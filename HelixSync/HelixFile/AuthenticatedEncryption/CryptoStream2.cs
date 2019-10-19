@@ -13,8 +13,8 @@ namespace HelixSync
 {
     internal class CryptoStream2 : CryptoStream
     {
-        private CryptoStreamMode baseMode;
-        private Stream baseStream;
+        private readonly CryptoStreamMode baseMode;
+        private readonly Stream baseStream;
 
         public CryptoStream2(Stream stream, ICryptoTransform transform, CryptoStreamMode mode) 
             : base(stream, transform, mode)

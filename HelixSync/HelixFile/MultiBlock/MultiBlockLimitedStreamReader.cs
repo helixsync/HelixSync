@@ -9,18 +9,16 @@ namespace HelixSync
 {
     class MultiBlockLimitedStreamReader : Stream
     {
-        private Stream streamIn;
+        private readonly Stream streamIn;
         private long remaining;
-        private long length;
+        private readonly long length;
 
         public MultiBlockLimitedStreamReader(Stream streamIn, long length)
         {
-            if (streamIn == null)
-                throw new ArgumentNullException(nameof(streamIn));
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length), "length must be greater than or equal to 0");
 
-            this.streamIn = streamIn;
+            this.streamIn = streamIn ?? throw new ArgumentNullException(nameof(streamIn));
             this.remaining = length;
             this.length = length;
         }

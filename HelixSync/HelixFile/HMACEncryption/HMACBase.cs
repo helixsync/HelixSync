@@ -21,10 +21,7 @@ namespace HelixSync.HMACEncryption
 
         public HMACBase(ByteBlock prefix, HMAC hmac)
         {
-            if (hmac == null)
-                throw new ArgumentNullException("hmac");
-
-            this.hmac = hmac;
+            this.hmac = hmac ?? throw new ArgumentNullException("hmac");
             this.prefix = prefix ?? new ByteBlock(new byte[0]);
         }
 

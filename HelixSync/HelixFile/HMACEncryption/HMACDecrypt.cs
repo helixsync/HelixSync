@@ -36,7 +36,7 @@ namespace HelixSync.HMACEncryption
             get { return m_BlockSize; }
         }
 
-        private ByteBlock checkHash(int blockID, bool finalBlock, ByteBlock input)
+        private ByteBlock CheckHash(int blockID, bool finalBlock, ByteBlock input)
         {
             if (input.Count < (hmac.HashSize / 8))
                 throw new HMACException("Block insufficient size");
@@ -53,7 +53,7 @@ namespace HelixSync.HMACEncryption
         public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
         {
             var input = new ByteBlock(inputBuffer, inputOffset, inputCount);
-            var output = checkHash(blockId, false, input);
+            var output = CheckHash(blockId, false, input);
             output.Copy(outputBuffer, outputOffset);
             blockId++;
             return output.Count;
@@ -62,7 +62,7 @@ namespace HelixSync.HMACEncryption
         public byte[] TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount)
         {
             var input = new ByteBlock(inputBuffer, inputOffset, inputCount);
-            var output = checkHash(blockId, true, input);
+            var output = CheckHash(blockId, true, input);
             var outputBytes = new byte[output.Count];
             output.Copy(outputBytes);
             blockId++;

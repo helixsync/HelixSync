@@ -35,21 +35,20 @@ namespace HelixSync.FileSystem
                 destinationPath = RemoveRootFromPath(destinationPath, Root.FullName);
 
             var destinationDirectory = Path.GetDirectoryName(destinationPath);
-            var newParent = Root.TryGetEntry(destinationDirectory) as FSDirectory;
-            if (newParent == null)
+            if (Root.TryGetEntry(destinationDirectory) as FSDirectory == null)
                 throw new System.IO.DirectoryNotFoundException("Could not find a part of the path");
 
-            if (newParent.TryGetEntry(Path.GetFileName(destinationPath)) != null)
+            if ((Root.TryGetEntry(destinationDirectory) as FSDirectory).TryGetEntry(Path.GetFileName(destinationPath)) != null)
                 throw new System.IO.DirectoryNotFoundException("Cannot move a file when that file already exists.");
 
-            var newEntry = new FSFile(HelixUtil.JoinUniversal(Root.FullName, destinationPath), newParent, WhatIf);
+            var newEntry = new FSFile(HelixUtil.JoinUniversal(Root.FullName, destinationPath), Root.TryGetEntry(destinationDirectory) as FSDirectory, WhatIf);
             newEntry.PopulateFromInfo(this.LastWriteTimeUtc, this.Length);
 
             if (!WhatIf)
                 File.Move(HelixUtil.PathNative(this.FullName), HelixUtil.PathNative(Path.Combine(Root.FullName, destinationPath)));
 
             ((IFSDirectoryCore)Parent).Remove(this);
-            ((IFSDirectoryCore)newParent).Add(newEntry);
+            ((IFSDirectoryCore)(Root.TryGetEntry(destinationDirectory) as FSDirectory)).Add(newEntry);
 
             return newEntry;
         }

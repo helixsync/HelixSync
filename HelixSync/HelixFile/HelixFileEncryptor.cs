@@ -10,10 +10,10 @@ namespace HelixSync
 {
     public class HelixFileEncryptor : IDisposable
     {
-        DerivedBytes DerivedBytes;
-        Stream StreamOut;
+        readonly DerivedBytes DerivedBytes;
+        readonly Stream StreamOut;
         MultiBlockEncryptor encryptor;
-        private HelixFileVersion FileVersion;
+        private readonly HelixFileVersion FileVersion;
 
         public HelixFileEncryptor(Stream streamOut, string password)
             : this(streamOut, DerivedBytesProvider.FromPassword(password))

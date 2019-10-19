@@ -9,7 +9,7 @@ namespace HelixSync
 {
     class ByteBlockStream : Stream
     {
-        private Queue<ByteBlock> m_underlyingArrays;
+        private readonly Queue<ByteBlock> m_underlyingArrays;
         private ByteBlock m_CurrentByteBlock;
         private int m_CurrentByteBlockPosition;
         public ByteBlockStream(params ByteBlock[] arrays)

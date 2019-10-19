@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using HelixSync.HMACEncryption;
 
 namespace HelixSync
@@ -13,8 +14,9 @@ namespace HelixSync
     class AuthenticatedDecryptor : Stream
     {
         bool initialized = false;
-
-        Stream streamIn;
+#pragma warning disable IDE0069 // Disposable fields should be disposed
+        readonly Stream streamIn;
+#pragma warning restore IDE0069 // Disposable fields should be disposed
 
         HMACDecrypt hmacTransform;
         HMACSHA256 hmacHash;
@@ -28,7 +30,7 @@ namespace HelixSync
         public DerivedBytes DerivedBytes { get; private set; }
         public HelixFileVersion FileVersion { get; private set; }
 
-
+        
         public AuthenticatedDecryptor(Stream streamIn)
         {
             if (streamIn == null)
@@ -189,6 +191,13 @@ namespace HelixSync
             throw new NotSupportedException();
         }
         #endregion
+
+
+        public override ValueTask DisposeAsync()
+        {
+            streamIn.Dispose();
+            return base.DisposeAsync();
+        }
 
     }
 }

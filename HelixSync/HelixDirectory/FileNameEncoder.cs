@@ -12,7 +12,7 @@ namespace HelixSync
 {
     public class FileNameEncoder
     {
-        private byte[] key;
+        private readonly byte[] key;
 
         public FileNameEncoder(byte[] key)
         {
@@ -21,10 +21,9 @@ namespace HelixSync
 
         public string EncodeName(string fileName)
         {
-            var hmac = new HMACSHA256(key);
-            
+            using var hmac = new HMACSHA256(key);
             byte[] data = hmac.ComputeHash(Encoding.UTF8.GetBytes(fileName));
-            
+
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < data.Length; i++)
                 builder.Append(data[i].ToString("x2"));

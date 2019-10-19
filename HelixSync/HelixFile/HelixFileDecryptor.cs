@@ -10,7 +10,7 @@ namespace HelixSync
 {
     public class HelixFileDecryptor : IDisposable
     {
-        private Stream streamIn;
+        private readonly Stream streamIn;
 
         public HelixFileDecryptor(Stream streamIn)
         {
@@ -80,7 +80,7 @@ namespace HelixSync
 
         private class StreamWrapper : Stream
         {
-            private Stream m_ParentStream;
+            private readonly Stream m_ParentStream;
 
             public StreamWrapper(Stream parentStream)
             {
@@ -167,21 +167,19 @@ namespace HelixSync
 
             int remainingLength = maxLength;
 
-            using (Stream contentOut = GetContentStream())
-            using (StreamReader reader = new StreamReader(contentOut))
+            using Stream contentOut = GetContentStream();
+            using StreamReader reader = new StreamReader(contentOut);
+            StringBuilder sw = new StringBuilder();
+            while (true)
             {
-                StringBuilder sw = new StringBuilder();
-                while (true)
-                {
-                    char[] buffer = new char[4096];
-                    int length = reader.Read(buffer, 0, buffer.Length > remainingLength ? remainingLength : buffer.Length);
-                    sw.Append(buffer, 0, length);
-                    remainingLength -= length;
-                    if (reader.EndOfStream)
-                        return sw.ToString();
-                    if (remainingLength == 0 && !reader.EndOfStream)
-                        throw new FileCorruptionException("Block exceeds the maximum size (" + maxLength.ToString() + ")");
-                }
+                char[] buffer = new char[4096];
+                int length = reader.Read(buffer, 0, buffer.Length > remainingLength ? remainingLength : buffer.Length);
+                sw.Append(buffer, 0, length);
+                remainingLength -= length;
+                if (reader.EndOfStream)
+                    return sw.ToString();
+                if (remainingLength == 0 && !reader.EndOfStream)
+                    throw new FileCorruptionException("Block exceeds the maximum size (" + maxLength.ToString() + ")");
             }
         }
 

@@ -12,21 +12,16 @@ namespace HelixSync
 {
     class AuthenticatedEncryptor : Stream
     {
-        Stream streamOut;
-
-        HMACEncrypt hmacTransform;
-        HMACSHA256 hmacHash;
-        CryptoStream hmacStream;
-
-        Aes aesTransform;
-        CryptoStream aesStream;
-
-        GZipStream gzipStream;
+        readonly Stream streamOut;
+        readonly HMACEncrypt hmacTransform;
+        readonly HMACSHA256 hmacHash;
+        readonly CryptoStream hmacStream;
+        readonly Aes aesTransform;
+        readonly CryptoStream aesStream;
+        readonly GZipStream gzipStream;
 
         public AuthenticatedEncryptor(Stream streamOut, DerivedBytes derivedBytes, HelixFileVersion hxVersion, byte[] hmacSalt = null, byte[] iv = null)
         {
-            if (streamOut == null)
-                throw new ArgumentNullException(nameof(streamOut));
             if (derivedBytes == null)
                 throw new ArgumentNullException(nameof(derivedBytes));
             if (hxVersion == null)
@@ -62,7 +57,7 @@ namespace HelixSync
             byte[] hmacFullKey = ByteBlock.ConcatenateBytes(hmacSalt, derivedBytes.Key);
 
 
-            this.streamOut = streamOut;
+            this.streamOut = streamOut ?? throw new ArgumentNullException(nameof(streamOut));
 
             byte[] bytesToHash = header.GetBytesToHash();
             streamOut.Write(bytesToHash, 0, bytesToHash.Length);

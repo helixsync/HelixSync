@@ -19,7 +19,7 @@ namespace HelixSync
 
         public static int Invoke(string[] args, ConsoleEx consoleEx = null)
         {
-            consoleEx = consoleEx ?? new ConsoleEx();
+            consoleEx ??= new ConsoleEx();
 
             if (args.Length <= 0) 
             {
@@ -32,9 +32,9 @@ namespace HelixSync
             }
 
             var commandName = args[0];
-            var command = Commands.FirstOrDefault(c => string.Equals(commandName,  c.name, StringComparison.OrdinalIgnoreCase));
+            var (name, optionType, invoker) = Commands.FirstOrDefault(c => string.Equals(commandName,  c.name, StringComparison.OrdinalIgnoreCase));
 
-            if (command.optionType == null) 
+            if (optionType == null) 
             {
                 consoleEx.WriteLine($"Invalid command '{commandName}'");
                 consoleEx.WriteLine();
@@ -44,9 +44,9 @@ namespace HelixSync
                 return -1;
             }
 
-            var options = Activator.CreateInstance(command.optionType);
+            var options = Activator.CreateInstance(optionType);
             ArgumentParser.ParseCommandLineArguments(options, args, 1);
-            return command.invoker(options, consoleEx);
+            return invoker(options, consoleEx);
         }        
 
     }

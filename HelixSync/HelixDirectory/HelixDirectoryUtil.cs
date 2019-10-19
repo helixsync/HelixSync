@@ -11,7 +11,7 @@ namespace HelixSync.HelixDirectory
     {
         public static void Cleanup(this FSDirectory directory, ConsoleEx console)
         {
-            console = console ?? new ConsoleEx();
+            console ??= new ConsoleEx();
 
             console.WriteLine(VerbosityLevel.Normal, 0, $"Performing cleanup on {directory.FullName}...");
 

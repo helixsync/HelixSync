@@ -39,7 +39,7 @@ namespace HelixSync
 
         public override string ToString()
         {
-            string AsStrOp(PreSyncOperation op)
+            static string AsStrOp(PreSyncOperation op)
             {
                 if (op == PreSyncOperation.Add) return "+";
                 if (op == PreSyncOperation.Change) return "~";
@@ -50,7 +50,7 @@ namespace HelixSync
                 return "?";
             }
 
-            string AsStrMode(PreSyncMode mode)
+            static string AsStrMode(PreSyncMode mode)
             {
                 if (mode == PreSyncMode.Unknown) return "=?=";
                 if (mode == PreSyncMode.DecryptedSide) return "=>";

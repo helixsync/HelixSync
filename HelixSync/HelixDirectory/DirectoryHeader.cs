@@ -32,37 +32,37 @@ namespace HelixSync
         public static DirectoryHeader Load(string filePath, DerivedBytesProvider derivedBytesProvider)
         {
             DirectoryHeader directoryHeader = new DirectoryHeader();
-            using (Stream streamIn = File.OpenRead(filePath))
-            using (HelixFileDecryptor decryptor = new HelixFileDecryptor(streamIn))
-            {
-                decryptor.Initialize(derivedBytesProvider);
-                directoryHeader.FileVersion = decryptor.FileVersion;
+            using Stream streamIn = File.OpenRead(filePath);
+            using HelixFileDecryptor decryptor = new HelixFileDecryptor(streamIn);
+            decryptor.Initialize(derivedBytesProvider);
+            directoryHeader.FileVersion = decryptor.FileVersion;
 
-                directoryHeader.Header = decryptor.ReadHeader();
-                directoryHeader.FileVersion = decryptor.FileVersion;
+            directoryHeader.Header = decryptor.ReadHeader();
+            directoryHeader.FileVersion = decryptor.FileVersion;
 
-                var contentSerialized = decryptor.GetContentString();
-                //var contentDeserialized = JsonConvert.DeserializeAnonymousType(contentSerialized, new { EncryptedFileNameSalt = new byte[] { } });
-                JsonConvert.PopulateObject(contentSerialized, directoryHeader);
+            var contentSerialized = decryptor.GetContentString();
+            //var contentDeserialized = JsonConvert.DeserializeAnonymousType(contentSerialized, new { EncryptedFileNameSalt = new byte[] { } });
+            JsonConvert.PopulateObject(contentSerialized, directoryHeader);
 
-                if (!Regex.IsMatch(directoryHeader.DirectoryId, "^[0-9A-F]{32}$"))
-                    throw new HelixException("Data curruption directory header, DirectoryId malformed");
-                if (directoryHeader.FileNameKey == null || directoryHeader.FileNameKey.Length != 32)
-                    throw new HelixException("Data curruption directory header, FileNameKey missing or insufficient length");
+            if (!Regex.IsMatch(directoryHeader.DirectoryId, "^[0-9A-F]{32}$"))
+                throw new HelixException("Data curruption directory header, DirectoryId malformed");
+            if (directoryHeader.FileNameKey == null || directoryHeader.FileNameKey.Length != 32)
+                throw new HelixException("Data curruption directory header, FileNameKey missing or insufficient length");
 
-                return directoryHeader;
-            }
+            return directoryHeader;
         }
 
         public static DirectoryHeader New(RandomNumberGenerator rng = null)
         {
-            rng = rng ?? RandomNumberGenerator.Create();
+            rng ??= RandomNumberGenerator.Create();
 
-            DirectoryHeader directoryHeader = new DirectoryHeader();
+            DirectoryHeader directoryHeader = 
+                new DirectoryHeader
+            {
+                Header = new FileEntry { FileName = "helix.hx" },
 
-            directoryHeader.Header = new FileEntry { FileName = "helix.hx" };
-
-            directoryHeader.FileNameKey = new byte[256 / 8];
+                FileNameKey = new byte[256 / 8]
+            };
             rng.GetBytes(directoryHeader.FileNameKey);
 
             directoryHeader.DirectoryId = NewDirectoryId(rng);
@@ -86,7 +86,7 @@ namespace HelixSync
         /// <param name="rng">Optional random number generator</param>
         public static string NewDirectoryId(RandomNumberGenerator rng = null)
         {
-            rng = rng ?? RandomNumberGenerator.Create();
+            rng ??= RandomNumberGenerator.Create();
             byte[] idBytes = new byte[128 / 8];
             rng.GetBytes(idBytes);
             return BitConverter.ToString(idBytes).Replace("-", string.Empty);
@@ -101,15 +101,13 @@ namespace HelixSync
 
             FileVersion = fileVersion ?? HelixFileVersion.Default;
 
-            using (Stream streamOut = File.Open(filePath, FileMode.Create, FileAccess.Write))
-            using (HelixFileEncryptor encryptor = new HelixFileEncryptor(streamOut, derivedBytesProvider, fileVersion))
-            {
-                encryptor.WriteHeader(Header);
+            using Stream streamOut = File.Open(filePath, FileMode.Create, FileAccess.Write);
+            using HelixFileEncryptor encryptor = new HelixFileEncryptor(streamOut, derivedBytesProvider, fileVersion);
+            encryptor.WriteHeader(Header);
 
-                var contentSerialized = JsonConvert.SerializeObject(this);
+            var contentSerialized = JsonConvert.SerializeObject(this);
 
-                encryptor.WriteContent(contentSerialized);
-            }
+            encryptor.WriteContent(contentSerialized);
         }
     }
 }

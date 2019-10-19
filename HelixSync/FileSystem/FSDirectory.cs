@@ -41,7 +41,7 @@ namespace HelixSync.FileSystem
 
 
 
-        private FSEntryCollection children = new FSEntryCollection(HelixUtil.FileSystemCaseSensitive);
+        private readonly FSEntryCollection children = new FSEntryCollection(HelixUtil.FileSystemCaseSensitive);
         public bool IsLoaded { get; private set; }
         bool IsLoadedDeep { get; set; }
         public bool IsRoot { get; }
@@ -163,7 +163,7 @@ namespace HelixSync.FileSystem
             (this.TryGetEntry(relativeName) as FSFile)?.Delete();
         }
 
-        internal void WhatIfReplaceFile(string relativeName, long fileSize, DateTime lastWriteTimeUtc = default(DateTime))
+        internal void WhatIfReplaceFile(string relativeName, long fileSize, DateTime lastWriteTimeUtc = default)
         {
             if (!WhatIf)
                 throw new InvalidOperationException("FSDirectory not in WhatIf mode");
@@ -324,7 +324,6 @@ namespace HelixSync.FileSystem
             else if (newEntry != null && oldEntry != null)
             {
                 oldEntry.PopulateFromInfo(newEntry.LastWriteTimeUtc, newEntry.Length);
-                newEntry = oldEntry;
             }
             else if (newEntry != null)
             {

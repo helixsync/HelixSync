@@ -45,7 +45,7 @@ namespace HelixSync
         public const string dateFormat = "yyyyMMdd't'HHmmssfff";
         const string dateZero =          "00000000t000000000";
 
-        private static Regex lineParse = new Regex(@"^" 
+        private static readonly Regex lineParse = new Regex(@"^" 
                             + @"(?<Type>[DF\-\~]?) "
                             + @"(?<DecrModified>[0-9]{8}[tT][0-9]{9}) "
                             + @"(?<DecrFileName>" + HelixUtil.QuotedPattern + @") "

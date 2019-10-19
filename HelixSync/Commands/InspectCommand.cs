@@ -19,7 +19,7 @@ namespace HelixSync
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
 
-            consoleEx = consoleEx ?? new ConsoleEx();
+            consoleEx ??= new ConsoleEx();
 
             using (Stream fileIn = File.OpenRead(options.File))
             using (HelixFileDecryptor decryptor = new HelixFileDecryptor(fileIn))
@@ -43,11 +43,9 @@ namespace HelixSync
                     afterRawMetadata: (r) => consoleEx.WriteLine(JsonFormat(r)));
                 consoleEx.WriteLine();
 
-                using (Stream content = decryptor.GetContentStream())
-                {
-                    ContentPreview(content, consoleEx);
-                    consoleEx.WriteLine();
-                }
+                using Stream content = decryptor.GetContentStream();
+                ContentPreview(content, consoleEx);
+                consoleEx.WriteLine();
             }
 
             //Reopen to calculate the checksum
@@ -56,13 +54,12 @@ namespace HelixSync
             {
                 decryptor.Initialize(DerivedBytesProvider.FromPassword(options.Password, options.KeyFile));
                 decryptor.ReadHeader();
-                using (Stream content = decryptor.GetContentStream())
-                {
-                    Checksum(content, consoleEx);
-                }
-            }
+                using Stream content = decryptor.GetContentStream();
+                Checksum(content, consoleEx);
 
-            return 0;
+
+                return 0;
+            }
         }
 
         /// <summary>
@@ -76,14 +73,12 @@ namespace HelixSync
                 throw new ArgumentOutOfRangeException(nameof(stream), "stream must have CanRead set to true");
 
             consoleEx.WriteLine("== Content Checksum (MD5) ==");
-            using (MD5 md5 = MD5.Create())
-            {
-                consoleEx.Write("[    ] Calculating MD5...".PadRight(40) + new string('\b', 40));
-                Action<double> onProgressChange = p => consoleEx.Write($"[{p:0,4:0%}]" + new string('\b', 6));
-                var checksum = md5.ComputeHash(new ProgressStream(stream, onProgressChange));
-                consoleEx.Write(new string(' ', 40) + new string('\b', 40)); //Clears the line
-                consoleEx.WriteLine("MD5: " + BitConverter.ToString(checksum).Replace("-", ""));
-            }
+            using MD5 md5 = MD5.Create();
+            consoleEx.Write("[    ] Calculating MD5...".PadRight(40) + new string('\b', 40));
+            void onProgressChange(double p) => consoleEx.Write($"[{p:0,4:0%}]" + new string('\b', 6));
+            var checksum = md5.ComputeHash(new ProgressStream(stream, onProgressChange));
+            consoleEx.Write(new string(' ', 40) + new string('\b', 40)); //Clears the line
+            consoleEx.WriteLine("MD5: " + BitConverter.ToString(checksum).Replace("-", ""));
         }
 
         /// <summary>
@@ -96,12 +91,8 @@ namespace HelixSync
 
             public ProgressStream(Stream baseStream, Action<double> onProgressChange)
             {
-                if (baseStream == null)
-                    throw new ArgumentNullException(nameof(baseStream));
-                if (onProgressChange == null)
-                    throw new ArgumentNullException(nameof(onProgressChange));
-                this.m_baseStream = baseStream;
-                this.m_OnProgressChange = onProgressChange;
+                this.m_baseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
+                this.m_OnProgressChange = onProgressChange ?? throw new ArgumentNullException(nameof(onProgressChange));
             }
 
             public override bool CanRead { get { return m_baseStream.CanRead; } }
@@ -289,16 +280,14 @@ namespace HelixSync
             if (detectedType == "text")
             {
                 //test for more specific type then just text
-                using (var mem = new MemoryStream(content, offset, (length > 1024 ? 1024 : length)))
-                using (var text = new StreamReader(mem))
-                {
-                    var textContent = text.ReadToEnd();
+                using var mem = new MemoryStream(content, offset, (length > 1024 ? 1024 : length));
+                using var text = new StreamReader(mem);
+                var textContent = text.ReadToEnd();
 
-                    //matches '{' or '[' followed by whitespace then '{','[','"', '0'-'9'
-                    if (System.Text.RegularExpressions.Regex.IsMatch(textContent, @"^[\{\[][\s\r\n\t]*[\{\[\""0-9]", System.Text.RegularExpressions.RegexOptions.Multiline))
-                    {
-                        detectedType = "json";
-                    }
+                //matches '{' or '[' followed by whitespace then '{','[','"', '0'-'9'
+                if (System.Text.RegularExpressions.Regex.IsMatch(textContent, @"^[\{\[][\s\r\n\t]*[\{\[\""0-9]", System.Text.RegularExpressions.RegexOptions.Multiline))
+                {
+                    detectedType = "json";
                 }
             }
 
@@ -368,12 +357,10 @@ namespace HelixSync
                 throw new ArgumentOutOfRangeException(nameof(length), "offset+length must not exceed the content size");
 
 
-            using (var mem = new MemoryStream(content, offset, (length > 1024 ? 1024 : length)))
-            using (var text = new StreamReader(mem))
-            {
-                var textContent = text.ReadToEnd();
-                return textContent;
-            }
+            using var mem = new MemoryStream(content, offset, (length > 1024 ? 1024 : length));
+            using var text = new StreamReader(mem);
+            var textContent = text.ReadToEnd();
+            return textContent;
         }
         public static string JsonDisplay(byte[] content, int offset, int length)
         {
@@ -386,12 +373,10 @@ namespace HelixSync
             if (offset + length > content.Length)
                 throw new ArgumentOutOfRangeException(nameof(length), "offset+length must not exceed the content size");
 
-            using (var mem = new MemoryStream(content, offset, (length > 1024 ? 1024 : length)))
-            using (var text = new StreamReader(mem))
-            {
-                var textContent = text.ReadToEnd();
-                return JsonFormat(textContent);
-            }
+            using var mem = new MemoryStream(content, offset, (length > 1024 ? 1024 : length));
+            using var text = new StreamReader(mem);
+            var textContent = text.ReadToEnd();
+            return JsonFormat(textContent);
         }
         public static string JsonFormat(string str)
         {

@@ -15,7 +15,7 @@ namespace HelixSync
     {
         private class ArgumentMetadata
         {
-            private PropertyInfo propertyInfo;
+            private readonly PropertyInfo propertyInfo;
 
             public ArgumentMetadata(PropertyInfo propertyInfo)
             {
@@ -50,7 +50,7 @@ namespace HelixSync
                 }
 
 
-                shortName = shortName ?? PreferShortName;
+                shortName ??= PreferShortName;
                 string usageString = "";
                 if (shortName == true)
                     usageString += $"-{ShortName}";

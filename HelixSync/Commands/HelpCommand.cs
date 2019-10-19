@@ -13,23 +13,23 @@ namespace HelixSync
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
 
-            consoleEx = consoleEx ?? new ConsoleEx();
+            consoleEx ??= new ConsoleEx();
 
             if (string.IsNullOrEmpty(options.Command)) 
             {
                 consoleEx.WriteLine("= Commands =");
-                foreach(var command in CommandProvider.Commands)
+                foreach(var (name, optionType, invoker) in CommandProvider.Commands)
                 {
-                    consoleEx.WriteLine(ArgumentParser.UsageLine(command.optionType, "helixsync " + command.name));
+                    consoleEx.WriteLine(ArgumentParser.UsageLine(optionType, "helixsync " + name));
                 }
             }
             else 
             {
-                var command = CommandProvider.Commands.FirstOrDefault(c => string.Equals(options.Command, c.name, StringComparison.OrdinalIgnoreCase));
-                if (command.name == null)
+                var (name, optionType, invoker) = CommandProvider.Commands.FirstOrDefault(c => string.Equals(options.Command, c.name, StringComparison.OrdinalIgnoreCase));
+                if (name == null)
                     throw new Exception($"Invalid command {options.Command}");
 
-                consoleEx.WriteLine(ArgumentParser.UsageString(command.optionType, "helixsync " + command.name, options.Advanced));
+                consoleEx.WriteLine(ArgumentParser.UsageString(optionType, "helixsync " + name, options.Advanced));
 
                 if (!options.Advanced) 
                 {

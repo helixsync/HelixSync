@@ -21,7 +21,7 @@ namespace HelixSync
             if (clearCache)
                 ClearCache();
 
-            var rng = RandomNumberGenerator.Create();
+            using var rng = RandomNumberGenerator.Create();
 
             console?.WriteLine(VerbosityLevel.Diagnostic, 1, "Enumerating Encr Directory...");
             List<FSEntry> encrDirectoryFiles = EncrDirectory.GetEntries(SearchOption.AllDirectories).Where(EncrFilter).ToList();

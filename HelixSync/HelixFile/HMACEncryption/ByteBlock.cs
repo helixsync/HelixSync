@@ -8,9 +8,9 @@ namespace HelixSync
 {
     public class ByteBlock
     {
-        private byte[] bytes;
-        private int count;
-        private int offset;
+        private readonly byte[] bytes;
+        private readonly int count;
+        private readonly int offset;
 
         public ByteBlock(byte[] bytes)
             : this(bytes, 0, bytes.Length)
@@ -112,8 +112,8 @@ namespace HelixSync
                     int byteAIsLarger = ((byteB - byteA) >> 8) & 1;
                     int byteBIsLarger = ((byteA - byteB) >> 8) & 1;
 
-                    aIsLarger = aIsLarger | (byteAIsLarger & ~bIsLarger);
-                    bIsLarger = bIsLarger | (byteBIsLarger & ~aIsLarger);
+                    aIsLarger |= (byteAIsLarger & ~bIsLarger);
+                    bIsLarger |= (byteBIsLarger & ~aIsLarger);
                 }
 
                 //fixes to standard compaire results (0 if A = B, 1 if A > B, -1: B > A)
