@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <DefineConstants>NET_CORE</DefineConstants>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <TestRunner>nunit</TestRunner>
   </PropertyGroup>
   <ItemGroup>
