@@ -18,17 +18,10 @@ namespace HelixSync
         {
             get
             {
-#if NET_CORE
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    return false;
-                else
-                    return true;
-#else
                 if (Environment.OSVersion.Platform == PlatformID.Unix)
                     return true;
                 else
                     return false;
-#endif
             }
         }
 

@@ -10,9 +10,6 @@ using System.Threading.Tasks;
 
 namespace HelixSync
 {
-#if !NET_CORE
-    [Serializable]
-#endif
     public class HelixException : Exception
     {
         public HelixException()
@@ -26,11 +23,5 @@ namespace HelixSync
         public HelixException(string message, Exception innerException) : base(message, innerException)
         {
         }
-
-#if !NET_CORE
-        protected HelixException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
-#endif
     }
 }

@@ -6,9 +6,6 @@ using System.Runtime.Serialization;
 
 namespace HelixSync
 {
-#if !NET_CORE
-    [Serializable]
-#endif
     internal class FileDesignatorException : AuthenticatedEncryptionException
     {
         public FileDesignatorException()
@@ -23,10 +20,5 @@ namespace HelixSync
         {
         }
 
-#if !NET_CORE
-        protected FileDesignatorException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
-#endif
     }
 }
