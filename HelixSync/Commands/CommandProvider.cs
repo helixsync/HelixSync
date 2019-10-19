@@ -12,7 +12,7 @@ namespace HelixSync
     {
         public static List<(string name, Type optionType, Func<object, ConsoleEx, int> invoker)> Commands = new List<(string name, Type optionType, Func<object, ConsoleEx, int> invoker)> {
             ("help", typeof(HelpOptions), (o, c) => HelpCommand.Help((HelpOptions)o, c)),
-            ("sync", typeof(SyncOptions),  (o, c) => SyncCommand.Sync((SyncOptions)o, c)),
+            ("sync", typeof(SyncOptions),  (o, c) => SyncCommand.Sync((SyncOptions)o, c).Error != null ? -1 : 0),
             ("inspect", typeof(InspectOptions),  (o, c) => InspectCommand.Inspect((InspectOptions)o, c)),
             ("cleanup", typeof(CleanupOptions), (o, c) => CleanupCommand.Cleanup((CleanupOptions)o, c)),
         };

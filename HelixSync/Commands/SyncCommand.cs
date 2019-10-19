@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using HelixSync.Commands;
 using HelixSync.FileSystem;
 using HelixSync.HelixDirectory;
 
@@ -12,8 +13,10 @@ namespace HelixSync
 {
     public static class SyncCommand
     {
-        public static int Sync(SyncOptions options, ConsoleEx consoleEx = null, HelixFileVersion fileVersion = null)
+        public static SyncSummary Sync(SyncOptions options, ConsoleEx consoleEx = null, HelixFileVersion fileVersion = null)
         {
+            var sum = new SyncSummary();
+
             consoleEx ??= new ConsoleEx();
             consoleEx.Verbosity = options.Verbosity;
 
@@ -55,7 +58,8 @@ namespace HelixSync
                     if (!consoleEx.PromptBool("Initialized encrypted and decrypted directories now? [y/N] ", false))
                     {
                         consoleEx.WriteErrorLine("Operation cancelled");
-                        return -1;
+                        sum.Error = new InitializationCanceledException();
+                        return sum;
                     }
 
                     if (pair.InitializeMergeWarning())
@@ -63,7 +67,8 @@ namespace HelixSync
                         if (!consoleEx.PromptBool("Decrypted directory is not empty and will be merged, continue? [y/N] ", false))
                         {
                             consoleEx.WriteErrorLine("Operation cancelled");
-                            return -1;
+                            sum.Error = new InitializationCanceledException();
+                            return sum;
                         }
                     }
                 }
@@ -90,7 +95,8 @@ namespace HelixSync
                     if (!consoleEx.PromptBool("Initialized decrypted directories now? [y/N] ", false))
                     {
                         consoleEx.WriteErrorLine("Operation cancelled");
-                        return -1;
+                        sum.Error = new InitializationCanceledException();
+                        return sum;
                     }
 
                     if (pair.InitializeMergeWarning())
@@ -98,7 +104,8 @@ namespace HelixSync
                         if (!consoleEx.PromptBool("Decrypted directory is not empty and will be merged, continue? [y/N] ", false))
                         {
                             consoleEx.WriteErrorLine("Operation cancelled");
-                            return -1;
+                            sum.Error = new InitializationCanceledException();
+                            return sum;
                         }
                     }
                 }
@@ -118,17 +125,7 @@ namespace HelixSync
 
 
 
-            int decrAdd = 0;
-            int decrRemove = 0;
-            int decrChange = 0;
-            int decrOther = 0;
-
-            int encrAdd = 0;
-            int encrRemove = 0;
-            int encrChange = 0;
-            int encrOther = 0;
-
-            int conflict = 0;
+            
 
             var defaultConflictAction = "";
 
@@ -174,50 +171,43 @@ namespace HelixSync
                 {
                     //todo: make display operation be the actual operation
                     if (change.DisplayOperation == PreSyncOperation.Add)
-                        encrAdd++;
+                        sum.EncrAdd++;
                     else if (change.DisplayOperation == PreSyncOperation.Remove)
-                        encrRemove++;
+                        sum.EncrRemove++;
                     else if (change.DisplayOperation == PreSyncOperation.Change)
-                        encrChange++;
+                        sum.EncrChange++;
                     else
-                        encrOther++;
+                        sum.EncrOther++;
                 }
                 else if (change.SyncMode == PreSyncMode.DecryptedSide)
                 {
 
                     if (change.DisplayOperation == PreSyncOperation.Add)
-                        decrAdd++;
+                        sum.DecrAdd++;
                     else if (change.DisplayOperation == PreSyncOperation.Remove)
-                        decrRemove++;
+                        sum.DecrRemove++;
                     else if (change.DisplayOperation == PreSyncOperation.Change)
-                        decrChange++;
+                        sum.DecrChange++;
                     else
-                        decrOther++;
+                        sum.DecrOther++;
                 }
                 else if (change.SyncMode == PreSyncMode.Conflict)
                 {
-                    conflict++;
+                    sum.Conflict++;
                 }
 
 
-                //if (!options.WhatIf)
-                //{
                 var syncResult = pair.TrySync(change, consoleEx);
                 //todo: add to error log
                 if (syncResult.Exception != null)
                     consoleEx.WriteErrorLine("..." + syncResult.Exception.Message);
-                //}
             }
 
-            //todo: show totals
-
-            Console.WriteLine("== Summary ==");
-            Console.WriteLine($"           | Add     | Remove  | Change  | Other   |");
-            Console.WriteLine($"ENC->DEC   | {encrAdd,7} | {encrRemove,7} | {encrChange,7} | {encrOther,7} |");
-            Console.WriteLine($"DEC->ENC   | {decrAdd,7} | {decrRemove,7} | {decrChange,7} | {decrOther,7} |");
+            consoleEx.WriteLine("== Summary ==");
+            consoleEx.WriteLine(sum);
 
             //todo: fix unchanged
-            Console.WriteLine($"Other      |     --- |     --- |     --- | {conflict,7:#,0} |");
+            consoleEx.WriteLine();
 
 
             //consoleEx.WriteLine(VerbosityLevel.Diagnostic, 0, "");
@@ -240,7 +230,7 @@ namespace HelixSync
             //        consoleEx.WriteLine(VerbosityLevel.Diagnostic, 1, $"{HelixUtil.FormatBytes5(entry.Length)} {entry.RelativePath}");
             //}
 
-            return 0;
+            return sum;
         }
     }
 }

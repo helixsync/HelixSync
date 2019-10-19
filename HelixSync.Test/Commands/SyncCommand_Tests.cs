@@ -13,6 +13,7 @@ using System.Collections;
 using HelixSync;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using HelixSync.Commands;
 
 namespace HelixSync.Test
 {
@@ -25,7 +26,7 @@ namespace HelixSync.Test
 
         }
 
-        public (int ExitCode, List<PreSyncDetails> Changes) SyncDecr1andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
+        public (SyncSummary sum, List<PreSyncDetails> Changes) SyncDecr1andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
         {
             List<PreSyncDetails> changes = new List<PreSyncDetails>();
             SyncOptions options = new SyncOptions
@@ -47,11 +48,11 @@ namespace HelixSync.Test
                     System.Diagnostics.Debug.WriteLine(o);
                 }
             };
-            var exitCode = SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
-            return (exitCode, changes);
+            var sum = SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
+            return (sum, changes);
         }
 
-        public (int ExitCode, List<PreSyncDetails> Changes) SyncDecr2andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
+        public (SyncSummary sum, List<PreSyncDetails> Changes) SyncDecr2andEncr1(Action<PreSyncDetails> onPreSyncDetails = null)
         {
             List<PreSyncDetails> changes = new List<PreSyncDetails>();
 
@@ -75,19 +76,17 @@ namespace HelixSync.Test
                 }
             };
 
-            var exitCode = SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
+            var sum = SyncCommand.Sync(options, console, HelixFileVersion.UnitTest);
 
-            return (exitCode, changes);
+            return (sum, changes);
         }
 
         public SyncLogEntry[] Decr1AndEncr1SyncLog()
         {
-            using (var pair = new DirectoryPair(Decr1.DirectoryPath, Encr1.DirectoryPath, DerivedBytesProvider.FromPassword("secret"), true))
-            {
-                pair.OpenEncr(null);
-                pair.OpenDecr(null);
-                return pair.SyncLog.ToArray();
-            }
+            using var pair = new DirectoryPair(Decr1.DirectoryPath, Encr1.DirectoryPath, DerivedBytesProvider.FromPassword("secret"), true);
+            pair.OpenEncr(null);
+            pair.OpenDecr(null);
+            return pair.SyncLog.ToArray();
         }
 
         [TestMethod]
@@ -294,5 +293,25 @@ namespace HelixSync.Test
             SyncDecr1andEncr1();
             Decr1.AssertEqual(new string[] { @"aa/", @"aa\002.txt < 002" });
         }
+
+        [TestMethod]
+        public void SyncCommand_SyncSummary()
+        {
+            Decr1.UpdateTo(@"001.txt");
+            Decr2.UpdateTo(@"002.txt");
+
+
+            SyncSummary sum;
+            (sum, _) = SyncDecr1andEncr1();
+
+            Assert.AreEqual(1, sum.DecrTotal);
+            Assert.AreEqual(0, sum.EncrTotal);
+
+
+            (sum, _) = SyncDecr2andEncr1();
+            Assert.AreEqual(1, sum.DecrTotal);
+            Assert.AreEqual(1, sum.EncrTotal);
+        }
+
     }
 }
