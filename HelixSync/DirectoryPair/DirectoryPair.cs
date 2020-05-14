@@ -266,11 +266,16 @@ namespace HelixSync
                     return SyncResults.Success();
                 }
             }
-            else if (entry.SyncMode == PreSyncMode.Match || entry.SyncMode == PreSyncMode.Unchanged)
+            else if (entry.SyncMode == PreSyncMode.Match)
             {
                 //Add to Log file (changed to be equal on both sides)
                 SyncLogEntry fileSystemEntry = CreateNewLogEntryFromDecrPath(entry.DecrFileName);
                 SyncLog.Add(fileSystemEntry);
+                return SyncResults.Success();
+            }
+            else if (entry.SyncMode == PreSyncMode.Unchanged)
+            {
+                //do nothing
                 return SyncResults.Success();
             }
 

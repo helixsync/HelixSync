@@ -7,6 +7,7 @@ namespace HelixSync
     public enum ConflictType
     {
         BothSidesChanged,
-        NonEmptyFolder
+        NonEmptyFolder,
+        UnexpectedPurge
     }
 }

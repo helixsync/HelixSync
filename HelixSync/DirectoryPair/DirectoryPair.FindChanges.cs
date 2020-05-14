@@ -263,6 +263,13 @@ namespace HelixSync
                     else
                         encrChange = PreSyncOperation.Add;
                 }
+
+                //
+                else if (change.EncrInfo == null)
+                {
+                    encrChange = PreSyncOperation.Purge;
+                }
+
                 else
                 {
                     if (change.LogEntry.EntryType == change.EncrHeader.EntryType
@@ -288,7 +295,7 @@ namespace HelixSync
         {
             foreach (var change in changes)
             {
-                (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) encr = (change.EncrChange != PreSyncOperation.None, change.EncrHeader?.EntryType ?? FileEntryType.Removed, change.EncrHeader?.LastWriteTimeUtc ?? DateTime.MinValue, change.EncrHeader?.Length ?? 0);
+                (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) encr = (change.EncrChange != PreSyncOperation.None, change.EncrHeader?.EntryType ?? FileEntryType.Purged, change.EncrHeader?.LastWriteTimeUtc ?? DateTime.MinValue, change.EncrHeader?.Length ?? 0);
                 (bool changed, FileEntryType entryType, DateTime lastWriteTime, long lenght) decr = (change.DecrChange != PreSyncOperation.None, change.DecrInfo?.EntryType ?? FileEntryType.Removed, change.DecrInfo?.LastWriteTimeUtc ?? DateTime.MinValue, change.DecrInfo?.Length ?? 0);
 
                 if (!encr.changed && !decr.changed)
@@ -386,6 +393,20 @@ namespace HelixSync
                         change.SyncMode = PreSyncMode.EncryptedSide;
                         continue;
                     }
+                    else if (encr.entryType == FileEntryType.Purged)
+                    {
+                        //todo: add unit test for unexpected purged file
+                        if (decr.entryType == FileEntryType.Removed)
+                        {
+                            change.SyncMode = PreSyncMode.EncryptedSide;
+                            continue;
+                        }
+
+                        change.SyncMode = PreSyncMode.Conflict;
+                        change.Conflicts.Add(ConflictType.UnexpectedPurge);
+                        continue;
+                    }
+
 
                     throw new NotImplementedException();
                 }
